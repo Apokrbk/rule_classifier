@@ -4,6 +4,8 @@ import copy
 import time
 from Classifier.Literal import Literal
 from Classifier.Rule import Rule
+
+
 class DictDataset:
     def __init__(self, dataset):
         self.df = dataset
@@ -13,6 +15,8 @@ class DictDataset:
 
     def delete_covered(self, rule):
         idx = set()
+        if len(rule.literals) == 0:
+            return
         for i in range(0, len(self.df)):
             to_delete = True
             for j in range(0, len(rule.literals)):
@@ -24,11 +28,14 @@ class DictDataset:
         indexes_to_keep = set(range(self.df.shape[0])) - idx
         self.df = self.df.take(list(indexes_to_keep))
         self.df.index = range(len(self.df))
+        self.dict = self.df.to_dict()
 
     def delete_not_covered(self, rule):
         idx = set()
         for i in range(0, len(self.df)):
             to_delete = True
+            if len(rule.literals)==0:
+                to_delete = False
             for j in range(0, len(rule.literals)):
                 if not rule.literals[j].value_covered_by_literal(self.dict[rule.literals[j].var_name][i]):
                     to_delete = False
@@ -176,18 +183,19 @@ class DictDataset:
     def length(self):
         return len(self.df)
 
-def count_foil_grow(p0,n0,p,n):
-    if p0==0 and n0==0:
-        if p==0:
+
+def count_foil_grow(p0, n0, p, n):
+    if p0 == 0 and n0 == 0:
+        if p == 0:
             return -math.inf
         try:
-            return -p*(math.log(p/(p+n),2))
+            return -p * (math.log(p / (p + n), 2))
         except (ZeroDivisionError, ValueError):
             return -math.inf
     else:
-        if p==0:
+        if p == 0:
             return -math.inf
         try:
-            return p*(math.log((p/(p+n)),2)-math.log((p0/(p0+n0)),2))
+            return p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2))
         except (ZeroDivisionError, ValueError):
             return -math.inf

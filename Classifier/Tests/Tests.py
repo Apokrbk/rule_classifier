@@ -149,3 +149,55 @@ class TestNotebook(unittest.TestCase):
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(0, p)
         self.assertEqual(0, n)
+
+    #TEST DELETE COVERED
+    def test_delete_covered_1(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+                         encoding='utf-8', delimiter=',')
+        rule = Rule()
+        ds = DictDataset(df)
+        len_before = ds.length()
+        ds.delete_covered(rule)
+        len_after = ds.length()
+        self.assertEqual(len_before, len_after)
+
+    def test_delete_covered_2(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+                         encoding='utf-8', delimiter=',')
+        l = Literal('ClassOfSeat', 'in', 'Crew')
+        l2 = Literal('Age', '<', 100)
+        l3 = Literal('Age', '>', 15)
+        rule = Rule()
+        rule.add_literal(l)
+        rule.add_literal(l2)
+        rule.add_literal(l3)
+        ds = DictDataset(df)
+        len_before = ds.length()
+        ds.delete_covered(rule)
+        len_after = ds.length()
+        self.assertEqual(len_before-4, len_after)
+
+    def test_delete_covered_3(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+                         encoding='utf-8', delimiter=',')
+        l = Literal('ClassOfSeat', 'in', '1st')
+        l2 = Literal('Age', '<', 20)
+        rule = Rule()
+        rule.add_literal(l)
+        rule.add_literal(l2)
+        ds = DictDataset(df)
+        len_before = ds.length()
+        ds.delete_covered(rule)
+        len_after = ds.length()
+        self.assertEqual(len_before-2, len_after)
+
+    #TEST DELETE NOT COVERED
+    def test_delete_not_covered_1(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+                         encoding='utf-8', delimiter=',')
+        rule = Rule()
+        ds = DictDataset(df)
+        len_before = ds.length()
+        ds.delete_not_covered(rule)
+        len_after = ds.length()
+        self.assertEqual(0, len_after)
