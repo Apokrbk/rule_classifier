@@ -56,10 +56,7 @@ class DictDataset:
             for i in range(0, len(list(growset.dict.keys())) - 1):
                 col_name = list(growset.dict.keys())[i]
                 col_values = list(set(growset.dict[col_name].values()))
-                if col_name in self.numeric_cols:
-                    l, foil = growset.find_best_num_literal(p0, n0, col_values, col_name)
-                else:
-                    l, foil = growset.find_best_char_literal(p0, n0, col_values, col_name)
+                l,foil = growset.find_best_literal(p0,n0,col_values, col_name)
                 if foil > best_foil:
                     best_l = copy.deepcopy(l)
                     best_foil = foil
@@ -68,6 +65,13 @@ class DictDataset:
             rule.add_literal(best_l)
             growset.delete_not_covered(rule)
         return rule
+
+    def find_best_literal(self,p0,n0,col_values,col_name):
+        if col_name in self.numeric_cols:
+            l, foil = self.find_best_num_literal(p0, n0, col_values, col_name)
+        else:
+            l, foil = self.find_best_char_literal(p0, n0, col_values, col_name)
+        return l,foil
 
     def prune_rule(self, rule):
         not_pruned_rule = copy.deepcopy(rule)
@@ -189,7 +193,7 @@ def count_foil_grow(p0, n0, p, n):
         if p == 0:
             return -math.inf
         try:
-            return -p * (math.log(p / (p + n), 2))
+            return p * (p/(p+n))
         except (ZeroDivisionError, ValueError):
             return -math.inf
     else:

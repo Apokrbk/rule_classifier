@@ -14,7 +14,7 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(-math.inf, count_foil_grow(0, 0, 0, 0))
 
     def test_count_foil_grow_p0_and_n0_zeros(self):
-        self.assertEqual(round(4.6797, 4), round(count_foil_grow(0, 0, 8, 4), 4))
+        self.assertEqual(round(5.3333, 4), round(count_foil_grow(0, 0, 8, 4), 4))
 
     def test_count_foil_grow_p_zero(self):
         self.assertEqual(-math.inf, count_foil_grow(6, 4, 0, 2))
@@ -201,3 +201,75 @@ class TestNotebook(unittest.TestCase):
         ds.delete_not_covered(rule)
         len_after = ds.length()
         self.assertEqual(0, len_after)
+
+    def test_delete_not_covered_2(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+                         encoding='utf-8', delimiter=',')
+        l = Literal('ClassOfSeat', 'in', 'Crew')
+        l2 = Literal('Age', '<', 100)
+        l3 = Literal('Age', '>', 15)
+        rule = Rule()
+        rule.add_literal(l)
+        rule.add_literal(l2)
+        rule.add_literal(l3)
+        ds = DictDataset(df)
+        len_before = ds.length()
+        ds.delete_not_covered(rule)
+        len_after = ds.length()
+        self.assertEqual(len_before - 28, len_after)
+
+    def test_delete_not_covered_3(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+                         encoding='utf-8', delimiter=',')
+        l = Literal('ClassOfSeat', 'in', '1st')
+        l2 = Literal('Age', '<', 20)
+        rule = Rule()
+        rule.add_literal(l)
+        rule.add_literal(l2)
+        ds = DictDataset(df)
+        len_before = ds.length()
+        ds.delete_not_covered(rule)
+        len_after = ds.length()
+        self.assertEqual(len_before - 30, len_after)
+
+    #TEST SPLIT INTO GROWSET PRUNESET
+    def test_split_into_growset_pruneset_1(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+                         encoding='utf-8', delimiter=',')
+        ds = DictDataset(df)
+        grow, prune = ds.split_into_growset_pruneset()
+        self.assertEqual(21, grow.length())
+        self.assertEqual(11, prune.length())
+
+    #TEST LENGTH
+    def test_length_dataset_1(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+                         encoding='utf-8', delimiter=',')
+        ds = DictDataset(df)
+        self.assertEqual(32, ds.length())
+
+    #TEST FIND BEST NUM LITERAL
+    def test_find_best_num_literal_1(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_find_best_num_1.csv',
+                         encoding='utf-8', delimiter=',')
+        ds = DictDataset(df)
+        best_l, best_foil = ds.find_best_num_literal(0,0,df['Age'].unique(), 'Age')
+        self.assertEqual(11.63636, round(best_foil,5))
+        self.assertEqual('Age < 455', best_l.to_string())
+
+    def test_find_best_num_literal_2(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_find_best_num_2.csv',
+                         encoding='utf-8', delimiter=',')
+        ds = DictDataset(df)
+        best_l, best_foil = ds.find_best_num_literal(0,0,df['Age'].unique(), 'Age')
+        self.assertEqual(16, round(best_foil,5))
+        self.assertEqual('Age < 95', best_l.to_string())
+
+    def test_find_best_num_literal_3(self):
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_find_best_num_3.csv',
+                         encoding='utf-8', delimiter=',')
+        ds = DictDataset(df)
+        best_l, best_foil = ds.find_best_num_literal(0,0,df['Age'].unique(), 'Age')
+        self.assertEqual(10, round(best_foil,5))
+        self.assertEqual('Age > 88', best_l.to_string())
+

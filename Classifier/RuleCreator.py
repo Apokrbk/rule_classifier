@@ -17,13 +17,13 @@ def create_rules(trainset_in):
         end = time.time()
         p, n = pruneset.count_p_n_rule(new_rule)
         if len(new_rule.literals) == 0 or n >= p or p == 0:
-            print("BAD RULE " + "Time: " + str(end - start) + "s")
+            # print("BAD RULE " + "Time: " + str(end - start) + "s")
             max_iter += 1
         else:
             trainset.delete_covered(new_rule)
             rule_to_add = copy.deepcopy(new_rule)
             rules.append(copy.deepcopy(rule_to_add))
-            print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
+            # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
         if max_iter >= 3 or trainset.length() < 60 or not trainset.is_any_pos_example():
             break
     return rules
@@ -41,8 +41,8 @@ def test_all(df):
     p_all = 0
     n_all = 0
     for i in range(0, len(rules)):
-        print(rules[i].to_string())
-        print(rules[i].count_p_n(df, last_col_name))
+        # print(rules[i].to_string())
+        # print(rules[i].count_p_n(df, last_col_name))
         p, n = rules[i].count_p_n(df, last_col_name)
         p_all += p
         n_all += n
@@ -78,6 +78,15 @@ def delete_covered(growset, rule):
     growset.index = range(len(growset))
     return growset
 
-
+print("TITANIC")
 df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv', encoding='utf-8', delimiter=',')
+test_all(df)
+
+print("NBA")
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/nba_logreg.csv', encoding = 'utf-8', delimiter=',')
+df = df.drop('Name', axis=1)
+test_all(df)
+
+print("INCOME")
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/income_test.csv', encoding = 'utf-8', delimiter=';')
 test_all(df)
