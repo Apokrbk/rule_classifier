@@ -1,14 +1,14 @@
 import pandas as pd
 
-from Classifier.BitmapDataset.Dataset import Dataset
-
-import copy
 import time
 
-def create_rules(trainset_in):
+from Classifier.BitmapDataset.BitmapDataset import BitmapDataset
+from Classifier.DictDataset.DictDataset import DictDataset
+
+
+def create_rules(trainset):
     rules = list()
     max_iter = 0
-    trainset = Dataset(trainset_in)
     while True:
         growset, pruneset = trainset.split_into_growset_pruneset()
         start = time.time()
@@ -20,27 +20,28 @@ def create_rules(trainset_in):
             max_iter += 1
         else:
             trainset.delete_covered(new_rule)
-            rules.append(trainset.make_rule(new_rule))
+            new_rule = trainset.make_rule(new_rule)
+            rules.append(new_rule)
             # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
         if max_iter >= 3 or trainset.length() < 60 or not trainset.is_any_pos_example():
             break
     return rules
 
 
-def test_all(df):
+def test_all(df, dataset):
     last_col_name = df.columns[len(df.columns) - 1]
     all_ex = len(df)
     p_ex = df[df.columns[len(df.columns) - 1]].sum()
     n_ex = all_ex - p_ex
     print(all_ex, p_ex, n_ex)
     start = time.time()
-    rules = create_rules(df)
+    rules = create_rules(dataset)
     end = time.time()
     p_all = 0
     n_all = 0
     for i in range(0, len(rules)):
-        print(rules[i].to_string())
-        print(rules[i].count_p_n(df, last_col_name))
+        # print(rules[i].to_string())
+        # print(rules[i].count_p_n(df, last_col_name))
         p, n = rules[i].count_p_n(df, last_col_name)
         p_all += p
         n_all += n
@@ -98,5 +99,8 @@ df.loc[(df['age'] > 16) & (df['age'] <= 32), 'age'] = 1
 df.loc[(df['age'] > 32) & (df['age'] <= 48), 'age'] = 2
 df.loc[(df['age'] > 48) & (df['age'] <= 64), 'age'] = 3
 df.loc[ df['age'] > 64, 'age'] = 4
-test_all(df)
+test_all(df, BitmapDataset(df))
 
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
+                         encoding='utf-8', delimiter=',')
+test_all(df, DictDataset(df))

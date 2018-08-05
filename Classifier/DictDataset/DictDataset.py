@@ -7,7 +7,7 @@ from Classifier.Literal import Literal
 from Classifier.Rule import Rule
 
 
-class Dataset(AbstractDataset):
+class DictDataset(AbstractDataset):
     def __init__(self, dataset):
         super().__init__(dataset)
         self.df = dataset
@@ -51,7 +51,7 @@ class Dataset(AbstractDataset):
 
     def grow_rule(self):
         rule = Rule()
-        growset = Dataset(self.df)
+        growset = DictDataset(self.df)
         while True:
             p0, n0 = growset.count_p_n_rule(rule)
             best_foil = -math.inf
@@ -87,7 +87,11 @@ class Dataset(AbstractDataset):
                     rule.delete_literal(not_pruned_rule.literals[i])
             if p == 0:
                 rule.delete_literal(not_pruned_rule.literals[i])
-        return rule
+        p,n = self.count_p_n_rule(rule)
+        if p==0 or n>=p or len(rule.literals)==0:
+            return None
+        else:
+            return rule
 
     def split_into_growset_pruneset(self):
         trainset = self.df.sample(frac=1)
@@ -97,13 +101,16 @@ class Dataset(AbstractDataset):
         growset.index = range(len(growset))
         pruneset = trainset[div_idx:]
         pruneset.index = range(len(pruneset))
-        return Dataset(growset), Dataset(pruneset)
+        return DictDataset(growset), DictDataset(pruneset)
 
     def split_into_numeric_car_cols(self):
         numeric_cols = self.df._get_numeric_data().columns
         numeric_cols = numeric_cols[:-1]
         char_cols = self.df.select_dtypes('object').columns
         return numeric_cols, char_cols
+
+    def make_rule(self, rule):
+        return rule
 
     def count_p_n_rule(self, rule):
         p = 0
