@@ -1,6 +1,6 @@
-from Classifier.DictDataset import DictDataset
 import pandas as pd
-import random
+
+from Classifier.BitmapDataset.Dataset import Dataset
 
 import copy
 import time
@@ -8,21 +8,19 @@ import time
 def create_rules(trainset_in):
     rules = list()
     max_iter = 0
-    trainset = DictDataset(trainset_in)
+    trainset = Dataset(trainset_in)
     while True:
         growset, pruneset = trainset.split_into_growset_pruneset()
         start = time.time()
         new_rule = growset.grow_rule()
         new_rule = pruneset.prune_rule(new_rule)
         end = time.time()
-        p, n = pruneset.count_p_n_rule(new_rule)
-        if len(new_rule.literals) == 0 or n >= p or p == 0:
+        if new_rule is None:
             # print("BAD RULE " + "Time: " + str(end - start) + "s")
             max_iter += 1
         else:
             trainset.delete_covered(new_rule)
-            rule_to_add = copy.deepcopy(new_rule)
-            rules.append(copy.deepcopy(rule_to_add))
+            rules.append(trainset.make_rule(new_rule))
             # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
         if max_iter >= 3 or trainset.length() < 60 or not trainset.is_any_pos_example():
             break
@@ -41,8 +39,8 @@ def test_all(df):
     p_all = 0
     n_all = 0
     for i in range(0, len(rules)):
-        # print(rules[i].to_string())
-        # print(rules[i].count_p_n(df, last_col_name))
+        print(rules[i].to_string())
+        print(rules[i].count_p_n(df, last_col_name))
         p, n = rules[i].count_p_n(df, last_col_name)
         p_all += p
         n_all += n
@@ -78,15 +76,27 @@ def delete_covered(growset, rule):
     growset.index = range(len(growset))
     return growset
 
-print("TITANIC")
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv', encoding='utf-8', delimiter=',')
+# print("TITANIC")
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic_train.csv', encoding='utf-8', delimiter=',')
+# df['Has_Cabin'] = df["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
+# test_all(df)
+
+# print("NBA")
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/nba_logreg.csv', encoding = 'utf-8', delimiter=',')
+# df = df.drop('Name', axis=1)
+# test_all(df)
+#
+# print("INCOME")
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/income_test.csv', encoding = 'utf-8', delimiter=';')
+# test_all(df)
+
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
+                         encoding='utf-8', delimiter=',')
+# Mapping Age
+df.loc[ df['age'] <= 16, 'age'] = 0
+df.loc[(df['age'] > 16) & (df['age'] <= 32), 'age'] = 1
+df.loc[(df['age'] > 32) & (df['age'] <= 48), 'age'] = 2
+df.loc[(df['age'] > 48) & (df['age'] <= 64), 'age'] = 3
+df.loc[ df['age'] > 64, 'age'] = 4
 test_all(df)
 
-print("NBA")
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/nba_logreg.csv', encoding = 'utf-8', delimiter=',')
-df = df.drop('Name', axis=1)
-test_all(df)
-
-print("INCOME")
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/income_test.csv', encoding = 'utf-8', delimiter=';')
-test_all(df)

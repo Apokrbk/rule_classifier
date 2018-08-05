@@ -1,13 +1,15 @@
 import pandas as pd
 import math
 import copy
-import time
+
+from Classifier.AbstractDataset import AbstractDataset
 from Classifier.Literal import Literal
 from Classifier.Rule import Rule
 
 
-class DictDataset:
+class Dataset(AbstractDataset):
     def __init__(self, dataset):
+        super().__init__(dataset)
         self.df = dataset
         self.dict = dataset.to_dict()
         self.numeric_cols, self.char_cols = self.split_into_numeric_car_cols()
@@ -49,7 +51,7 @@ class DictDataset:
 
     def grow_rule(self):
         rule = Rule()
-        growset = DictDataset(self.df)
+        growset = Dataset(self.df)
         while True:
             p0, n0 = growset.count_p_n_rule(rule)
             best_foil = -math.inf
@@ -95,7 +97,7 @@ class DictDataset:
         growset.index = range(len(growset))
         pruneset = trainset[div_idx:]
         pruneset.index = range(len(pruneset))
-        return DictDataset(growset), DictDataset(pruneset)
+        return Dataset(growset), Dataset(pruneset)
 
     def split_into_numeric_car_cols(self):
         numeric_cols = self.df._get_numeric_data().columns
