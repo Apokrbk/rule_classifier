@@ -30,6 +30,8 @@ def create_rules(trainset):
 
 def test_all(df, dataset):
     last_col_name = df.columns[len(df.columns) - 1]
+    df = df[6498:]
+    df.index = range(0,len(df))
     all_ex = len(df)
     p_ex = df[df.columns[len(df.columns) - 1]].sum()
     n_ex = all_ex - p_ex
@@ -53,6 +55,7 @@ def test_all(df, dataset):
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
     accuracy = (tp + tn) / (tp + tn + fn + fp)
+    print("NUMBER OF RULES: " + str(len(rules)))
     print("TP: " + str(tp) + " FP: " + str(fp))
     print("TN: " + str(tn) + " FN: " + str(fn))
     print("Precision: " + str(precision))
@@ -77,30 +80,37 @@ def delete_covered(growset, rule):
     growset.index = range(len(growset))
     return growset
 
+
+
+
+
+
 # print("TITANIC")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic_train.csv', encoding='utf-8', delimiter=',')
-# df['Has_Cabin'] = df["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
-# test_all(df)
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
+#                          encoding='utf-8', delimiter=',')
+# test_all(df, BitmapDataset(df))
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
+#                          encoding='utf-8', delimiter=',')
+# test_all(df, DictDataset(df))
 
 # print("NBA")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/nba_logreg.csv', encoding = 'utf-8', delimiter=',')
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/nba_logreg.csv', encoding = 'utf-8', delimiter=';')
 # df = df.drop('Name', axis=1)
-# test_all(df)
-#
+# test_all(df, BitmapDataset(df))
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/nba_logreg.csv', encoding = 'utf-8', delimiter=';')
+# df = df.drop('Name', axis=1)
+# test_all(df, DictDataset(df))
+
 # print("INCOME")
 # df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/income_test.csv', encoding = 'utf-8', delimiter=';')
-# test_all(df)
+# test_all(df, BitmapDataset(df))
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/income_test.csv', encoding = 'utf-8', delimiter=';')
+# test_all(df, DictDataset(df))
 
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
-                         encoding='utf-8', delimiter=',')
-# Mapping Age
-df.loc[ df['age'] <= 16, 'age'] = 0
-df.loc[(df['age'] > 16) & (df['age'] <= 32), 'age'] = 1
-df.loc[(df['age'] > 32) & (df['age'] <= 48), 'age'] = 2
-df.loc[(df['age'] > 48) & (df['age'] <= 64), 'age'] = 3
-df.loc[ df['age'] > 64, 'age'] = 4
-test_all(df, BitmapDataset(df))
-
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
-                         encoding='utf-8', delimiter=',')
-test_all(df, DictDataset(df))
+print("MUSHROOM")
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
+#                          encoding='utf-8', delimiter=';')
+# test_all(df, BitmapDataset(df))
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
+                         encoding='utf-8', delimiter=';')
+test_all(df, DictDataset(df[:6498]))

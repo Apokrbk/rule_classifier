@@ -17,7 +17,7 @@ class Literal:
         elif self.op == '<':
             return value < self.values
         else:
-            return value == self.values
+            return value in self.values
 
     def count_p_n(self, growset, last_col_name):
 

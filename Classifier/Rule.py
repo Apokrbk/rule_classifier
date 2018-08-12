@@ -36,13 +36,4 @@ class Rule:
                     n += 1
         return p, n
 
-    def row_covered_by_rule(self, row):
-        if len(self.literals) == 0:
-            return False
-        covered = True
-        for i in range(0, len(self.literals)):
-            if not self.literals[i].value_covered_by_literal(row[self.literals[i].var_name]):
-                covered = False
-                break
-        return covered
 
