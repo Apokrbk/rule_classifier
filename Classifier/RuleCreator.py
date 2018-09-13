@@ -22,7 +22,7 @@ def create_rules(trainset):
             trainset.delete_covered(new_rule)
             new_rule = trainset.make_rule(new_rule)
             rules.append(new_rule)
-            # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
+            print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
         if max_iter >= 3 or trainset.length() < 60 or not trainset.is_any_pos_example():
             break
     return rules
@@ -113,4 +113,4 @@ print("MUSHROOM")
 # test_all(df, BitmapDataset(1,df))
 df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
                          encoding='utf-8', delimiter=';')
-test_all(df, DictDataset(1,df[:6498]))
+test_all(df, BitmapDataset(1,df[:6498]))

@@ -12,7 +12,7 @@ from Classifier.Rule import Rule
 
 class BitmapDataset(AbstractDataset):
     def __init__(self, prod=1, dataset=None, col_names=None, col_dicts=None, rows=None, uniq_value=None):
-        super().__init__(1,dataset)
+        super().__init__(1, dataset)
         self.prod = prod
         if col_names is None:
             self.preprocess_data(dataset, 10)
@@ -76,18 +76,21 @@ class BitmapDataset(AbstractDataset):
                     l = i
                     best_foil = foil
                 rule.remove(i)
+        rule.add(l)
         for i in range(2, self.uniq_val):
-            p,n = self.count_p_n_rule(rule)
+            p, n = self.count_p_n_rule(rule)
             if i not in rule:
                 rule.add(i)
-            p0,n0 = self.count_p_n_rule(rule)
-            if p0 != 0 and p != 0:
-                if p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) > 0:
+                p0, n0 = self.count_p_n_rule(rule)
+                if p0 != 0 and p != 0:
+                    if n == 0 and n0 == 0:
+                        if p >= p0:
+                            rule.remove(i)
+                    else:
+                        if p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) > 0:
+                            rule.remove(i)
+                if p0 == 0:
                     rule.remove(i)
-            if p == 0:
-                rule.remove(i)
-
-        rule.add(l)
         return rule
 
     def prune_rule(self, rule):
@@ -99,7 +102,7 @@ class BitmapDataset(AbstractDataset):
             if p0 != 0 and p != 0:
                 if p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) > 0:
                     rule.add(literals[i])
-            if p == 0:
+            if p0 == 0:
                 rule.add(literals[i])
         p, n = self.count_p_n_rule(rule)
         if p == 0 or n >= p or len(rule) == 0:
@@ -108,10 +111,11 @@ class BitmapDataset(AbstractDataset):
             return rule
 
     def split_into_growset_pruneset(self):
-        if self.prod==1:
+        if self.prod == 1:
             shuffle(self.rows)
         div_idx = math.floor(len(self.rows) * 2 / 3)
-        return BitmapDataset(prod=self.prod, col_names=self.col_names, col_dicts=self.col_dicts, rows=self.rows[:div_idx],
+        return BitmapDataset(prod=self.prod, col_names=self.col_names, col_dicts=self.col_dicts,
+                             rows=self.rows[:div_idx],
                              uniq_value=self.uniq_val), BitmapDataset(
             prod=self.prod, col_names=self.col_names, col_dicts=self.col_dicts,
             rows=self.rows[div_idx:], uniq_value=self.uniq_val)
@@ -163,8 +167,9 @@ class BitmapDataset(AbstractDataset):
             interval = (max_value - min_value) / num_of_intervals
             start = min_value
             for j in range(0, num_of_intervals):
-                if j == num_of_intervals-1:
+                if j == num_of_intervals - 1:
                     df.loc[(df[numeric_cols[i]] >= start), numeric_cols[i]] = j
                 else:
-                    df.loc[(df[numeric_cols[i]] >= start) & (df[numeric_cols[i]] < start+interval), numeric_cols[i]] = j
+                    df.loc[
+                        (df[numeric_cols[i]] >= start) & (df[numeric_cols[i]] < start + interval), numeric_cols[i]] = j
                     start += interval
