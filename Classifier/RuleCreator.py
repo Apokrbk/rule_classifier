@@ -1,3 +1,5 @@
+import math
+import numpy as np
 import pandas as pd
 
 import time
@@ -28,10 +30,44 @@ def create_rules(trainset):
     return rules
 
 
-def test_all(df, dataset):
+def split_into_trainset_testset(df, ratio):
+    df = df.sample(frac=1)
+    df.index = range(len(df))
+    div_idx = math.floor(len(df) * ratio)
+    trainset = df[0:div_idx]
+    trainset.index = range(len(trainset))
+    testset = df[div_idx:]
+    testset.index = range(len(testset))
+    return trainset, testset
+
+def cubes_for_numeric_data(df, num_of_intervals):
+    numeric_cols = df._get_numeric_data().columns
+    numeric_cols = numeric_cols[:-1]
+    for i in range(0, len(numeric_cols)):
+        np_array = np.array(df[numeric_cols[i]])
+        interval_p = 100/num_of_intervals
+        df.insert(0, numeric_cols[i]+"__", None)
+        for j in range(0, num_of_intervals):
+            if j == num_of_intervals - 1:
+                perc = np.percentile(np_array,j*interval_p)
+                df.loc[(df[numeric_cols[i]] >= perc), numeric_cols[i]+"__"] = str("P"+str(j))
+            elif j==0:
+                perc = np.percentile(np_array, interval_p)
+                df.loc[(df[numeric_cols[i]] < perc), numeric_cols[i]+"__"] = str("P"+str(j))
+            else:
+                perc_from = np.percentile(np_array, j*interval_p)
+                perc_to = np.percentile(np_array, (j+1)*interval_p)
+                df.loc[
+                    (df[numeric_cols[i]] >= perc_from) & (df[numeric_cols[i]] < perc_to), numeric_cols[i]+"__"] = str("P"+str(j))
+        df = df.drop(numeric_cols[i],axis=1)
+        df = df.rename(index=str, columns={numeric_cols[i]+"__": numeric_cols[i]})
+    return df
+
+
+def test_all(df_all, prod):
+    df_train, df = split_into_trainset_testset(df_all, 0.8)
+    dataset = DictDataset(prod, df_train)
     last_col_name = df.columns[len(df.columns) - 1]
-    df = df[6498:]
-    df.index = range(0,len(df))
     all_ex = len(df)
     p_ex = df[df.columns[len(df.columns) - 1]].sum()
     n_ex = all_ex - p_ex
@@ -42,7 +78,7 @@ def test_all(df, dataset):
     p_all = 0
     n_all = 0
     for i in range(0, len(rules)):
-        print(rules[i].to_string())
+        # print(rules[i].to_string())
         # print(rules[i].count_p_n(df, last_col_name))
         p, n = rules[i].count_p_n(df, last_col_name)
         p_all += p
@@ -81,36 +117,23 @@ def delete_covered(growset, rule):
     return growset
 
 
-
-
-
-
 # print("TITANIC")
 # df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
 #                          encoding='utf-8', delimiter=',')
-# test_all(df, BitmapDataset(df))
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
-#                          encoding='utf-8', delimiter=',')
-# test_all(df, DictDataset(df))
-
-# print("NBA")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/nba_logreg.csv', encoding = 'utf-8', delimiter=';')
-# df = df.drop('Name', axis=1)
-# test_all(df, BitmapDataset(df))
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/nba_logreg.csv', encoding = 'utf-8', delimiter=';')
-# df = df.drop('Name', axis=1)
-# test_all(df, DictDataset(df))
-
-# print("INCOME")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/income_test.csv', encoding = 'utf-8', delimiter=';')
-# test_all(df, BitmapDataset(df))
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/income_test.csv', encoding = 'utf-8', delimiter=';')
-# test_all(df, DictDataset(df))
-
-print("MUSHROOM")
+# test_all(df, 1)
+#
+# print("MUSHROOM")
 # df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
-#                          encoding='utf-8', delimiter=';')
-# test_all(df, BitmapDataset(1,df))
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
-                         encoding='utf-8', delimiter=';')
-test_all(df, BitmapDataset(1,df[:6498]))
+#                  encoding='utf-8', delimiter=';')
+# test_all(df, 1)
+
+# print("HYPOTHYROID")
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/hypothyroid.csv',
+#                  encoding='utf-8', delimiter=';')
+# test_all(df, 1)
+
+print("PHONEME")
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/phoneme.csv',
+                 encoding='utf-8', delimiter=';')
+df = cubes_for_numeric_data(df,10)
+test_all(df, 1)

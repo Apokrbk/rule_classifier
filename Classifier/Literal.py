@@ -17,7 +17,11 @@ class Literal:
         elif self.op == '<':
             return value < self.values
         else:
-            return value == self.values or value in self.values
+            try:
+                val = int(self.values)
+                return value == self.values
+            except (ValueError, TypeError):
+                return value in self.values
 
     def count_p_n(self, growset, last_col_name):
 

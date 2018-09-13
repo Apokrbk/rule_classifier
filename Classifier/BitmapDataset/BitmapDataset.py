@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 from Classifier.AbstractDataset import AbstractDataset
 from pyroaring import BitMap
 import copy
@@ -162,14 +164,21 @@ class BitmapDataset(AbstractDataset):
         numeric_cols = df._get_numeric_data().columns
         numeric_cols = numeric_cols[:-1]
         for i in range(0, len(numeric_cols)):
-            min_value = df[numeric_cols[i]].min()
-            max_value = df[numeric_cols[i]].max()
-            interval = (max_value - min_value) / num_of_intervals
-            start = min_value
+            np_array = np.array(df[numeric_cols[i]])
+            interval_p = 100/num_of_intervals
+            df.insert(0, numeric_cols[i]+"__", None)
             for j in range(0, num_of_intervals):
                 if j == num_of_intervals - 1:
-                    df.loc[(df[numeric_cols[i]] >= start), numeric_cols[i]] = j
+                    perc = np.percentile(np_array,j*interval_p)
+                    df.loc[(df[numeric_cols[i]] >= perc), numeric_cols[i]+"__"] = str("P"+str(j))
+                elif j==0:
+                    perc = np.percentile(np_array, interval_p)
+                    df.loc[(df[numeric_cols[i]] < perc), numeric_cols[i]+"__"] = str("P"+str(j))
                 else:
+                    perc_from = np.percentile(np_array, j*interval_p)
+                    perc_to = np.percentile(np_array, (j+1)*interval_p)
                     df.loc[
-                        (df[numeric_cols[i]] >= start) & (df[numeric_cols[i]] < start + interval), numeric_cols[i]] = j
-                    start += interval
+                        (df[numeric_cols[i]] >= perc_from) & (df[numeric_cols[i]] < perc_to), numeric_cols[i]+"__"] = str("P"+str(j))
+            df = df.drop(numeric_cols[i],axis=1)
+            df = df.rename(index=str, columns={numeric_cols[i]+"__": numeric_cols[i]})
+

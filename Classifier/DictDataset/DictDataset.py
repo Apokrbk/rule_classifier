@@ -1,10 +1,14 @@
 import pandas as pd
 import math
 import copy
+import numpy as np
 
 from Classifier.AbstractDataset import AbstractDataset
 from Classifier.Literal import Literal
 from Classifier.Rule import Rule
+
+
+
 
 
 class DictDataset(AbstractDataset):
@@ -156,7 +160,7 @@ class DictDataset(AbstractDataset):
     def find_best_num_literal(self, p0, n0, unique_values, atr_col_name):
         best_foil = -math.inf
         best_l = None
-        for i in range(0, len(unique_values)):
+        for i in range(0, len(unique_values),100):
             l = Literal(atr_col_name, '<', unique_values[i])
             p, n = self.count_p_n_literal(l)
             tmp_foil = count_foil_grow(p0, n0, p, n)
@@ -217,3 +221,4 @@ def count_foil_grow(p0, n0, p, n):
             return p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2))
         except (ZeroDivisionError, ValueError):
             return -math.inf
+
