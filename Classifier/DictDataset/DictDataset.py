@@ -8,12 +8,13 @@ from Classifier.Rule import Rule
 
 
 class DictDataset(AbstractDataset):
-    def __init__(self, dataset):
-        super().__init__(dataset)
+    def __init__(self, prod,dataset):
+        super().__init__(prod,dataset)
         self.df = dataset
         self.dict = dataset.to_dict()
         self.numeric_cols, self.char_cols = self.split_into_numeric_car_cols()
         self.class_name = self.df.columns[len(self.df.columns) - 1]
+        self.prod = prod
 
     def delete_covered(self, rule):
         idx = set()
@@ -51,7 +52,7 @@ class DictDataset(AbstractDataset):
 
     def grow_rule(self):
         rule = Rule()
-        growset = DictDataset(self.df)
+        growset = DictDataset(self.prod, self.df)
         while True:
             p0, n0 = growset.count_p_n_rule(rule)
             best_foil = -math.inf
@@ -94,14 +95,17 @@ class DictDataset(AbstractDataset):
             return rule
 
     def split_into_growset_pruneset(self):
-        trainset = self.df.sample(frac=1)
+        if self.prod==1:
+            trainset = self.df.sample(frac=1)
+        else:
+            trainset = self.df
         trainset.index = range(len(trainset))
         div_idx = math.floor(len(trainset) * 2 / 3)
         growset = trainset[0:div_idx]
         growset.index = range(len(growset))
         pruneset = trainset[div_idx:]
         pruneset.index = range(len(pruneset))
-        return DictDataset(growset), DictDataset(pruneset)
+        return DictDataset(self.prod, growset), DictDataset(self.prod, pruneset)
 
     def split_into_numeric_car_cols(self):
         numeric_cols = self.df._get_numeric_data().columns
@@ -179,6 +183,7 @@ class DictDataset(AbstractDataset):
                 p_to_n.append(p / n)
         df = pd.DataFrame({'value': unique_values, 'p_to_n': p_to_n})
         df = df.sort_values(by='p_to_n', ascending=False)
+        df.index = range(len(df))
         values_to_literal = list()
         for i in range(0, len(unique_values)):
             values_to_literal.append(df.at[i, 'value'])

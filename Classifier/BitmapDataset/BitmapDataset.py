@@ -11,8 +11,9 @@ from Classifier.Rule import Rule
 
 
 class BitmapDataset(AbstractDataset):
-    def __init__(self, dataset=None, col_names=None, col_dicts=None, rows=None, uniq_value=None):
-        super().__init__(dataset)
+    def __init__(self, prod=1, dataset=None, col_names=None, col_dicts=None, rows=None, uniq_value=None):
+        super().__init__(1,dataset)
+        self.prod = prod
         if col_names is None:
             self.preprocess_data(dataset, 10)
             self.rows = list()
@@ -64,21 +65,29 @@ class BitmapDataset(AbstractDataset):
 
     def grow_rule(self):
         rule = BitMap()
-        while True:
-            p0, n0 = self.count_p_n_rule(rule)
-            best_foil = -math.inf
-            for i in range(2, self.uniq_val):
-                if i not in rule:
-                    rule.add(i)
-                    p, n = self.count_p_n_rule(rule)
-                    foil = count_foil_grow(p0, n0, p, n)
-                    if foil > best_foil:
-                        l = i
-                        best_foil = foil
+        p0, n0 = self.count_p_n_rule(rule)
+        best_foil = -math.inf
+        for i in range(2, self.uniq_val):
+            if i not in rule:
+                rule.add(i)
+                p, n = self.count_p_n_rule(rule)
+                foil = count_foil_grow(p0, n0, p, n)
+                if foil > best_foil:
+                    l = i
+                    best_foil = foil
+                rule.remove(i)
+        for i in range(2, self.uniq_val):
+            p,n = self.count_p_n_rule(rule)
+            if i not in rule:
+                rule.add(i)
+            p0,n0 = self.count_p_n_rule(rule)
+            if p0 != 0 and p != 0:
+                if p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) > 0:
                     rule.remove(i)
-            if best_foil == 0 or best_foil == -math.inf:
-                break
-            rule.add(l)
+            if p == 0:
+                rule.remove(i)
+
+        rule.add(l)
         return rule
 
     def prune_rule(self, rule):
@@ -90,7 +99,7 @@ class BitmapDataset(AbstractDataset):
             if p0 != 0 and p != 0:
                 if p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) > 0:
                     rule.add(literals[i])
-            if p != 0:
+            if p == 0:
                 rule.add(literals[i])
         p, n = self.count_p_n_rule(rule)
         if p == 0 or n >= p or len(rule) == 0:
@@ -99,11 +108,12 @@ class BitmapDataset(AbstractDataset):
             return rule
 
     def split_into_growset_pruneset(self):
-        shuffle(self.rows)
+        if self.prod==1:
+            shuffle(self.rows)
         div_idx = math.floor(len(self.rows) * 2 / 3)
-        return BitmapDataset(col_names=self.col_names, col_dicts=self.col_dicts, rows=self.rows[:div_idx],
+        return BitmapDataset(prod=self.prod, col_names=self.col_names, col_dicts=self.col_dicts, rows=self.rows[:div_idx],
                              uniq_value=self.uniq_val), BitmapDataset(
-            col_names=self.col_names, col_dicts=self.col_dicts,
+            prod=self.prod, col_names=self.col_names, col_dicts=self.col_dicts,
             rows=self.rows[div_idx:], uniq_value=self.uniq_val)
 
     def count_p_n_rule(self, rule):

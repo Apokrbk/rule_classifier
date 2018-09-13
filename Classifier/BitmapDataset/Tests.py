@@ -15,13 +15,13 @@ class TestNotebook(unittest.TestCase):
     def test_is_any_pos_example_true(self):
         df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_is_any_pos_true.csv', encoding='utf-8',
                          delimiter=',')
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         self.assertEqual(True, ds.is_any_pos_example())
 
     def test_is_any_pos_example_false(self):
         df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_is_any_pos_false.csv',
                          encoding='utf-8', delimiter=',')
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         self.assertEqual(False, ds.is_any_pos_example())
 
 
@@ -33,7 +33,7 @@ class TestNotebook(unittest.TestCase):
         rule = BitMap()
         rule.add(2)
         rule.add(6)
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(2, p)
         self.assertEqual(2, n)
@@ -45,7 +45,7 @@ class TestNotebook(unittest.TestCase):
         rule = BitMap()
         rule.add(7)
         rule.add(8)
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(0, p)
         self.assertEqual(5, n)
@@ -56,7 +56,7 @@ class TestNotebook(unittest.TestCase):
 
         rule = BitMap()
         rule.add(7)
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(8, p)
         self.assertEqual(8, n)
@@ -65,7 +65,7 @@ class TestNotebook(unittest.TestCase):
         df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_kubelki.csv',
                          encoding='utf-8', delimiter=';')
         rule = BitMap()
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(0, p)
         self.assertEqual(0, n)
@@ -75,7 +75,7 @@ class TestNotebook(unittest.TestCase):
         df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_kubelki.csv',
                          encoding='utf-8', delimiter=';')
         rule = BitMap()
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         len_before = ds.length()
         ds.delete_covered(rule)
         len_after = ds.length()
@@ -87,7 +87,7 @@ class TestNotebook(unittest.TestCase):
         rule = BitMap()
         rule.add(7)
         rule.add(8)
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         len_before = ds.length()
         ds.delete_covered(rule)
         len_after = ds.length()
@@ -98,7 +98,7 @@ class TestNotebook(unittest.TestCase):
                          encoding='utf-8', delimiter=';')
         rule = BitMap()
         rule.add(7)
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         len_before = ds.length()
         ds.delete_covered(rule)
         len_after = ds.length()
@@ -109,7 +109,7 @@ class TestNotebook(unittest.TestCase):
         df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_kubelki.csv',
                          encoding='utf-8', delimiter=';')
         rule = BitMap()
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         ds.delete_not_covered(rule)
         len_after = ds.length()
         self.assertEqual(0, len_after)
@@ -119,7 +119,7 @@ class TestNotebook(unittest.TestCase):
                          encoding='utf-8', delimiter=';')
         rule = BitMap()
         rule.add(7)
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         len_before = ds.length()
         ds.delete_not_covered(rule)
         len_after = ds.length()
@@ -131,7 +131,7 @@ class TestNotebook(unittest.TestCase):
         rule = BitMap()
         rule.add(7)
         rule.add(8)
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         len_before = ds.length()
         ds.delete_not_covered(rule)
         len_after = ds.length()
@@ -141,7 +141,7 @@ class TestNotebook(unittest.TestCase):
     def test_split_into_growset_pruneset_1(self):
         df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_kubelki.csv',
                          encoding='utf-8', delimiter=';')
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         grow, prune = ds.split_into_growset_pruneset()
         self.assertEqual(21, grow.length())
         self.assertEqual(11, prune.length())
@@ -150,8 +150,9 @@ class TestNotebook(unittest.TestCase):
     def test_length_dataset_1(self):
         df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_kubelki.csv',
                          encoding='utf-8', delimiter=';')
-        ds = BitmapDataset(df)
+        ds = BitmapDataset(1,df)
         self.assertEqual(32, ds.length())
+
 
 
 

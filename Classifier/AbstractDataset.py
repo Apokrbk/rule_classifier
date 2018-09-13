@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 class AbstractDataset:
     @abstractmethod
-    def __init__(self, dataset):
+    def __init__(self, dataset, prod):
         pass
 
     @abstractmethod

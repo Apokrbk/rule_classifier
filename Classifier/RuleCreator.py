@@ -42,7 +42,7 @@ def test_all(df, dataset):
     p_all = 0
     n_all = 0
     for i in range(0, len(rules)):
-        # print(rules[i].to_string())
+        print(rules[i].to_string())
         # print(rules[i].count_p_n(df, last_col_name))
         p, n = rules[i].count_p_n(df, last_col_name)
         p_all += p
@@ -110,7 +110,7 @@ def delete_covered(growset, rule):
 print("MUSHROOM")
 # df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
 #                          encoding='utf-8', delimiter=';')
-# test_all(df, BitmapDataset(df))
+# test_all(df, BitmapDataset(1,df))
 df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
                          encoding='utf-8', delimiter=';')
-test_all(df, DictDataset(df[:6498]))
+test_all(df, DictDataset(1,df[:6498]))
