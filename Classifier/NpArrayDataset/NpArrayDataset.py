@@ -70,14 +70,12 @@ class NpArrayDataset(AbstractDataset):
 
     def delete_not_covered(self, rule):
         p_rule, n_rule = self.make_rules_from_iters(rule)
+        idx_p = np.where(p_rule)
+        idx_n = np.where(n_rule)
         for i in range(0, len(self.col_val_tables_pos)):
             for j in range(0, len(self.col_val_tables_pos[i])):
-                to_delete_pos = np.logical_and(self.col_val_tables_pos[i][j], p_rule)
-                to_delete_neg = np.logical_and(self.col_val_tables_neg[i][j], n_rule)
-                idx_p = np.where(to_delete_pos == False)
-                idx_n = np.where(to_delete_neg == False)
-                self.col_val_tables_pos[i][j] = np.delete(self.col_val_tables_pos[i][j], idx_p)
-                self.col_val_tables_neg[i][j] = np.delete(self.col_val_tables_neg[i][j], idx_n)
+                self.col_val_tables_pos[i][j] = np.take(self.col_val_tables_pos[i][j], idx_p)[0]
+                self.col_val_tables_neg[i][j] = np.take(self.col_val_tables_neg[i][j], idx_n)[0]
 
     def grow_rule(self):
         best_l = None
