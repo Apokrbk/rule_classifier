@@ -160,7 +160,7 @@ class DictDataset(AbstractDataset):
     def find_best_num_literal(self, p0, n0, unique_values, atr_col_name):
         best_foil = -math.inf
         best_l = None
-        for i in range(0, len(unique_values),100):
+        for i in range(0, len(unique_values)):
             l = Literal(atr_col_name, '<', unique_values[i])
             p, n = self.count_p_n_literal(l)
             tmp_foil = count_foil_grow(p0, n0, p, n)

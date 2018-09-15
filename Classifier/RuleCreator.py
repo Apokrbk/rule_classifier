@@ -1,3 +1,4 @@
+import copy
 import math
 import numpy as np
 import pandas as pd
@@ -6,6 +7,7 @@ import time
 
 from Classifier.BitmapDataset.BitmapDataset import BitmapDataset
 from Classifier.DictDataset.DictDataset import DictDataset
+from Classifier.NpArrayDataset.NpArrayDataset import NpArrayDataset
 
 
 def create_rules(trainset):
@@ -18,7 +20,7 @@ def create_rules(trainset):
         new_rule = pruneset.prune_rule(new_rule)
         end = time.time()
         if new_rule is None:
-            # print("BAD RULE " + "Time: " + str(end - start) + "s")
+            print("BAD RULE " + "Time: " + str(end - start) + "s")
             max_iter += 1
         else:
             trainset.delete_covered(new_rule)
@@ -64,26 +66,34 @@ def cubes_for_numeric_data(df, num_of_intervals):
     return df
 
 
-def test_all(df_all, prod):
+def test_all(df_all, prod, iters):
     df_train, df = split_into_trainset_testset(df_all, 0.8)
-    dataset = DictDataset(prod, df_train)
-    last_col_name = df.columns[len(df.columns) - 1]
     all_ex = len(df)
-    p_ex = df[df.columns[len(df.columns) - 1]].sum()
+    p_ex = df[df.columns[-1]].sum()
     n_ex = all_ex - p_ex
+    p_ex *= iters
+    n_ex *= iters
+    all_ex *= iters
     print(all_ex, p_ex, n_ex)
-    start = time.time()
-    rules = create_rules(dataset)
-    end = time.time()
     p_all = 0
     n_all = 0
-    for i in range(0, len(rules)):
-        # print(rules[i].to_string())
-        # print(rules[i].count_p_n(df, last_col_name))
-        p, n = rules[i].count_p_n(df, last_col_name)
-        p_all += p
-        n_all += n
-        df = delete_covered(df, rules[i])
+    time_all = 0
+    rules_all = 0
+    for j in range(0, iters):
+        c_df = copy.deepcopy(df)
+        dataset = NpArrayDataset(prod, df_train)
+        start = time.time()
+        rules = create_rules(dataset)
+        end = time.time()
+        for i in range(0, len(rules)):
+            # print(rules[i].to_string())
+            # print(rules[i].count_p_n(df, last_col_name))
+            p, n = rules[i].count_p_n(c_df)
+            p_all += p
+            n_all += n
+            c_df = delete_covered(c_df, rules[i])
+        time_all += (end-start)
+        rules_all += len(rules)
     tp = p_all
     fp = n_all
     tn = n_ex - n_all
@@ -91,13 +101,14 @@ def test_all(df_all, prod):
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
     accuracy = (tp + tn) / (tp + tn + fn + fp)
-    print("NUMBER OF RULES: " + str(len(rules)))
     print("TP: " + str(tp) + " FP: " + str(fp))
     print("TN: " + str(tn) + " FN: " + str(fn))
     print("Precision: " + str(precision))
     print("Recall: " + str(recall))
     print("Accuracy: " + str(accuracy))
-    print("Full time: " + str(end - start))
+    print("Average time: " + str(time_all/iters))
+    print("Average number of rules: " + str(rules_all / iters))
+    print("Average errors: " + str((fp+fn)/iters))
 
 
 def delete_covered(growset, rule):
@@ -119,21 +130,23 @@ def delete_covered(growset, rule):
 
 # print("TITANIC")
 # df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
-#                          encoding='utf-8', delimiter=',')
-# test_all(df, 1)
+#                          encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df, 5)
+# test_all(df, 1, 1)
 #
-# print("MUSHROOM")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
-#                  encoding='utf-8', delimiter=';')
-# test_all(df, 1)
+print("MUSHROOM")
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
+                 encoding='utf-8', delimiter=';')
+test_all(df, 1, 1)
 
 # print("HYPOTHYROID")
 # df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/hypothyroid.csv',
 #                  encoding='utf-8', delimiter=';')
-# test_all(df, 1)
+# df = cubes_for_numeric_data(df,10)
+# test_all(df, 1, 1)
 
-print("PHONEME")
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/phoneme.csv',
-                 encoding='utf-8', delimiter=';')
-df = cubes_for_numeric_data(df,10)
-test_all(df, 1)
+# print("PHONEME")
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/phoneme.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,10)
+# test_all(df, 1, 1)

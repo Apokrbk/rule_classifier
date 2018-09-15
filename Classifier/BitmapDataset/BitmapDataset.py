@@ -1,4 +1,5 @@
 import math
+import time
 
 import numpy as np
 
@@ -17,37 +18,43 @@ class BitmapDataset(AbstractDataset):
         super().__init__(1, dataset)
         self.prod = prod
         if col_names is None:
-            self.preprocess_data(dataset, 10)
             self.rows = list()
             self.col_names = dataset.columns
             self.col_names = self.col_names[:-1]
             self.col_dicts = list()
-            it = 2
-            for i in range(0, len(self.col_names)):
-                unique_values = dataset[self.col_names[i]].unique()
-                act_dict = dict()
-                for j in range(0, len(unique_values)):
-                    act_dict.update({unique_values[j]: it})
-                    it += 1
-                self.col_dicts.append(act_dict)
-            for j in range(0, len(dataset)):
-                act_row = BitMap()
-                for i in range(0, len(dataset.columns)):
-                    if i == len(dataset.columns) - 1:
-                        if dataset[dataset.columns[i]][j] == 1:
-                            act_row.add(1)
-                        else:
-                            act_row.add(0)
-                    else:
-                        act_dict = self.col_dicts[i]
-                        act_row.add(act_dict[dataset[self.col_names[i]][j]])
-                self.rows.append(act_row)
+            it = self.create_dicts(dataset)
+            self.create_rows(dataset)
             self.uniq_val = it - 1
         else:
             self.col_names = col_names
             self.col_dicts = col_dicts
             self.rows = rows
             self.uniq_val = uniq_value
+
+    def create_rows(self, dataset):
+        for j in range(0, len(dataset)):
+            act_row = BitMap()
+            for i in range(0, len(dataset.columns)):
+                if i == len(dataset.columns) - 1:
+                    if dataset[dataset.columns[i]][j] == 1:
+                        act_row.add(1)
+                    else:
+                        act_row.add(0)
+                else:
+                    act_dict = self.col_dicts[i]
+                    act_row.add(act_dict[dataset[self.col_names[i]][j]])
+            self.rows.append(act_row)
+
+    def create_dicts(self, dataset):
+        it = 2
+        for i in range(0, len(self.col_names)):
+            unique_values = dataset[self.col_names[i]].unique()
+            act_dict = dict()
+            for j in range(0, len(unique_values)):
+                act_dict.update({unique_values[j]: it})
+                it += 1
+            self.col_dicts.append(act_dict)
+        return it
 
     def delete_covered(self, rule):
         self.rows = [x for x in self.rows if not self.row_covered_by_rule(x, rule)]
@@ -69,16 +76,12 @@ class BitmapDataset(AbstractDataset):
         rule = BitMap()
         p0, n0 = self.count_p_n_rule(rule)
         best_foil = -math.inf
-        for i in range(2, self.uniq_val):
-            if i not in rule:
-                rule.add(i)
-                p, n = self.count_p_n_rule(rule)
-                foil = count_foil_grow(p0, n0, p, n)
-                if foil > best_foil:
-                    l = i
-                    best_foil = foil
-                rule.remove(i)
+        l = self.find_first_literal(best_foil, n0, p0, rule)
         rule.add(l)
+        self.check_other_literals(rule)
+        return rule
+
+    def check_other_literals(self, rule):
         for i in range(2, self.uniq_val):
             p, n = self.count_p_n_rule(rule)
             if i not in rule:
@@ -93,7 +96,18 @@ class BitmapDataset(AbstractDataset):
                             rule.remove(i)
                 if p0 == 0:
                     rule.remove(i)
-        return rule
+
+    def find_first_literal(self, best_foil, n0, p0, rule):
+        for i in range(2, self.uniq_val):
+            if i not in rule:
+                rule.add(i)
+                p, n = self.count_p_n_rule(rule)
+                foil = count_foil_grow(p0, n0, p, n)
+                if foil > best_foil:
+                    l = i
+                    best_foil = foil
+                rule.remove(i)
+        return l
 
     def prune_rule(self, rule):
         literals = list(rule)
@@ -160,25 +174,4 @@ class BitmapDataset(AbstractDataset):
                     new_rule.add_literal(l)
         return new_rule
 
-    def preprocess_data(self, df, num_of_intervals):
-        numeric_cols = df._get_numeric_data().columns
-        numeric_cols = numeric_cols[:-1]
-        for i in range(0, len(numeric_cols)):
-            np_array = np.array(df[numeric_cols[i]])
-            interval_p = 100/num_of_intervals
-            df.insert(0, numeric_cols[i]+"__", None)
-            for j in range(0, num_of_intervals):
-                if j == num_of_intervals - 1:
-                    perc = np.percentile(np_array,j*interval_p)
-                    df.loc[(df[numeric_cols[i]] >= perc), numeric_cols[i]+"__"] = str("P"+str(j))
-                elif j==0:
-                    perc = np.percentile(np_array, interval_p)
-                    df.loc[(df[numeric_cols[i]] < perc), numeric_cols[i]+"__"] = str("P"+str(j))
-                else:
-                    perc_from = np.percentile(np_array, j*interval_p)
-                    perc_to = np.percentile(np_array, (j+1)*interval_p)
-                    df.loc[
-                        (df[numeric_cols[i]] >= perc_from) & (df[numeric_cols[i]] < perc_to), numeric_cols[i]+"__"] = str("P"+str(j))
-            df = df.drop(numeric_cols[i],axis=1)
-            df = df.rename(index=str, columns={numeric_cols[i]+"__": numeric_cols[i]})
 

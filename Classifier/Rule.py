@@ -18,9 +18,10 @@ class Rule:
             string += " and "
         return string[:-4]
 
-    def count_p_n(self, growset, last_col_name):
+    def count_p_n(self, growset):
         p = 0
         n = 0
+        last_col_name = growset.columns[len(growset.columns) - 1]
         if len(self.literals) == 0:
             return 0, 0
         for i in range(0, len(growset[last_col_name])):

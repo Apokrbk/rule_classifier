@@ -3,7 +3,7 @@ from abc import abstractmethod
 
 class AbstractDataset:
     @abstractmethod
-    def __init__(self, dataset, prod):
+    def __init__(self, prod, dataset):
         pass
 
     @abstractmethod
@@ -19,7 +19,7 @@ class AbstractDataset:
         pass
 
     @abstractmethod
-    def make_rule(self):
+    def make_rule(self, rule):
         pass
 
     @abstractmethod

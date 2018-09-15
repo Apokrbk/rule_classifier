@@ -23,14 +23,3 @@ class Literal:
             except (ValueError, TypeError):
                 return value in self.values
 
-    def count_p_n(self, growset, last_col_name):
-
-        p = 0
-        n = 0
-        for i in range(0, len(growset[last_col_name])):
-            if self.value_covered_by_literal(growset[self.var_name][i]):
-                if growset[last_col_name][i] == 1:
-                    p += 1
-                else:
-                    n += 1
-        return p, n
