@@ -20,13 +20,13 @@ def create_rules(trainset):
         new_rule = pruneset.prune_rule(new_rule)
         end = time.time()
         if new_rule is None:
-            print("BAD RULE " + "Time: " + str(end - start) + "s")
+            # print("BAD RULE " + "Time: " + str(end - start) + "s")
             max_iter += 1
         else:
             trainset.delete_covered(new_rule)
             new_rule = trainset.make_rule(new_rule)
             rules.append(new_rule)
-            print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
+            # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
         if max_iter >= 3 or trainset.length() < 60 or not trainset.is_any_pos_example():
             break
     return rules
@@ -81,8 +81,8 @@ def test_all(df_all, prod, iters):
     rules_all = 0
     for j in range(0, iters):
         c_df = copy.deepcopy(df)
-        dataset = NpArrayDataset(prod, df_train)
         start = time.time()
+        dataset = NpArrayDataset(prod, df_train)
         rules = create_rules(dataset)
         end = time.time()
         for i in range(0, len(rules)):
@@ -134,19 +134,19 @@ def delete_covered(growset, rule):
 # df = cubes_for_numeric_data(df, 5)
 # test_all(df, 1, 1)
 #
-print("MUSHROOM")
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
-                 encoding='utf-8', delimiter=';')
-test_all(df, 1, 1)
-
-# print("HYPOTHYROID")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/hypothyroid.csv',
+# print("MUSHROOM")
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
 #                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 1)
+# test_all(df, 1, 10)
+
+print("HYPOTHYROID")
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/hypothyroid.csv',
+                 encoding='utf-8', delimiter=';')
+df = cubes_for_numeric_data(df,10)
+test_all(df, 1, 10)
 
 # print("PHONEME")
 # df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/phoneme.csv',
 #                  encoding='utf-8', delimiter=';')
 # df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 1)
+# test_all(df, 1, 10)

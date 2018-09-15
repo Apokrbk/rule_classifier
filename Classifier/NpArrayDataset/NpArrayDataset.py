@@ -5,7 +5,8 @@ import time
 
 from Classifier.AbstractDataset import AbstractDataset
 import numpy as np
-
+import pandas as pd
+pd.options.mode.chained_assignment = None
 from Classifier.Literal import Literal
 from Classifier.Rule import Rule
 
@@ -38,26 +39,22 @@ class NpArrayDataset(AbstractDataset):
                 for j in range(0, len(self.col_unique_values[i])):
                     col_val_tables_pos_tmp[i].append(list())
                     col_val_tables_neg_tmp[i].append(list())
-            start = time.time()
-            for x in dataset.iterrows():
-                for i in range(0, len(self.col_names)):
-                    for j in range(0, len(self.col_unique_values[i])):
-                        if x[1][self.col_names[i]] == self.col_unique_values[i][j]:
-                            if x[1][dataset.columns[-1]] == 1:
-                                col_val_tables_pos_tmp[i][j].append(True)
-                            else:
-                                col_val_tables_neg_tmp[i][j].append(True)
-                        else:
-                            if x[1][dataset.columns[-1]] == 1:
-                                col_val_tables_pos_tmp[i][j].append(False)
-                            else:
-                                col_val_tables_neg_tmp[i][j].append(False)
-            end = time.time()
-            print(end - start)
+            pos = dataset.loc[dataset[dataset.columns[-1]] == 1]
+            neg = dataset.loc[dataset[dataset.columns[-1]] == 0]
             for i in range(0, len(self.col_names)):
                 for j in range(0, len(self.col_unique_values[i])):
-                    self.col_val_tables_pos[i].append(np.array(col_val_tables_pos_tmp[i][j]))
-                    self.col_val_tables_neg[i].append(np.array(col_val_tables_neg_tmp[i][j]))
+                    if len(pos) != 0:
+                        pos.loc[(pos[self.col_names[i]] == self.col_unique_values[i][j]), "__temp__"] = True
+                        pos.loc[(pos[self.col_names[i]] != self.col_unique_values[i][j]), "__temp__"] = False
+                    else:
+                        pos["__temp__"] = 1
+                    if len(neg) != 0 :
+                        neg.loc[(neg[self.col_names[i]] == self.col_unique_values[i][j]), "__temp__"] = True
+                        neg.loc[(neg[self.col_names[i]] != self.col_unique_values[i][j]), "__temp__"] = False
+                    else:
+                        neg["__temp__"] = 1
+                    self.col_val_tables_pos[i].append(np.array(pos['__temp__'].values))
+                    self.col_val_tables_neg[i].append(np.array(neg['__temp__'].values))
 
     def delete_covered(self, rule):
         p_rule, n_rule = self.make_rules_from_iters(rule)
