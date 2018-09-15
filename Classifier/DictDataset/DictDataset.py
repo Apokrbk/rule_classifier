@@ -120,6 +120,9 @@ class DictDataset(AbstractDataset):
     def make_rule(self, rule):
         return rule
 
+    def unmake_rule(self, rule):
+        return rule
+
     def count_p_n_rule(self, rule):
         p = 0
         n = 0

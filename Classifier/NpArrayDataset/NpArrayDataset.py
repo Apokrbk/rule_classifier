@@ -127,6 +127,18 @@ class NpArrayDataset(AbstractDataset):
         new_rule.add_literal(l)
         return new_rule
 
+    def unmake_rule(self, rule):
+        new_rule = list()
+        for i in range(0, len(rule.literals)):
+            for j in range(0, len(self.col_names)):
+                if rule.literals[i].var_name == self.col_names[j]:
+                    col=j
+                    break
+            for j in range(0,len(self.col_unique_values[col])):
+                if rule.literals[i].value_covered_by_literal(self.col_unique_values[col][j]):
+                    new_rule.append([col, j])
+        return new_rule
+
     def prune_rule(self, rule):
         len_rule = len(rule) - 1
         for i in range(len_rule, -1, -1):
@@ -147,8 +159,12 @@ class NpArrayDataset(AbstractDataset):
     def split_into_growset_pruneset(self):
         count_p_growset = round(len(self.col_val_tables_pos[0][0]) * 2 / 3)
         count_n_growset = round(len(self.col_val_tables_neg[0][0]) * 2 / 3)
-        idx_p = random.sample(range(0, len(self.col_val_tables_pos[0][0])), count_p_growset)
-        idx_n = random.sample(range(0, len(self.col_val_tables_neg[0][0])), count_n_growset)
+        if self.prod == 1:
+            idx_p = random.sample(range(0, len(self.col_val_tables_pos[0][0])), count_p_growset)
+            idx_n = random.sample(range(0, len(self.col_val_tables_neg[0][0])), count_n_growset)
+        else:
+            idx_p = range(0, count_p_growset)
+            idx_n = range(0, count_n_growset)
         col_val_tables_pos_grow = list()
         col_val_tables_neg_grow = list()
         col_val_tables_pos_prune = list()
@@ -173,6 +189,9 @@ class NpArrayDataset(AbstractDataset):
     def count_p_n_rule(self, rule):
         p_rule, n_rule = self.make_rules_from_iters(rule)
         return np.count_nonzero(p_rule == True), np.count_nonzero(n_rule == True)
+
+
+
 
     def make_rules_from_iters(self, rule):
         if rule is None:

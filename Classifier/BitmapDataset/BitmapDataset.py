@@ -174,4 +174,15 @@ class BitmapDataset(AbstractDataset):
                     new_rule.add_literal(l)
         return new_rule
 
+    def unmake_rule(self, rule):
+        new_rule = BitMap()
+        for i in range(0, len(rule.literals)):
+            for j in range(0, len(self.col_names)):
+                if rule.literals[i].var_name == self.col_names[j]:
+                    col = j
+                    break
+            for value in list(self.col_dicts[col].keys()):
+                if rule.literals[i].value_covered_by_literal(value):
+                    new_rule.add(self.col_dicts[col][value])
+        return new_rule
 

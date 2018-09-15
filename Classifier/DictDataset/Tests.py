@@ -314,9 +314,9 @@ class TestNotebook(unittest.TestCase):
 
     #TEST GROW RULE
     def test_grow_rule_1(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_find_best_num_5.csv',
+        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_find_best_num_4.csv',
                          encoding='utf-8', delimiter=';')
-        ds = NpArrayDataset(0,df)
+        ds = DictDataset(0,df)
         rule = ds.grow_rule()
         self.assertEqual("Sex in ['Female'] and Age < 22 ", rule.to_string())
 

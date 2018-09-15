@@ -5,6 +5,8 @@ import pandas as pd
 import unittest
 
 from Classifier.BitmapDataset.BitmapDataset import BitmapDataset
+from Classifier.Literal import Literal
+from Classifier.Rule import Rule
 
 
 class TestNotebook(unittest.TestCase):
@@ -150,7 +152,13 @@ class TestNotebook(unittest.TestCase):
     def test_length_dataset_1(self):
         df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_kubelki.csv',
                          encoding='utf-8', delimiter=';')
+        l = Literal('Sex', 'in', 'Female')
+        l2 = Literal('Sex', 'in', 'Male')
+        rule = Rule()
+        rule.add_literal(l)
+        rule.add_literal(l2)
         ds = BitmapDataset(1,df)
+        ds.unmake_rule(rule)
         self.assertEqual(32, ds.length())
 
 
