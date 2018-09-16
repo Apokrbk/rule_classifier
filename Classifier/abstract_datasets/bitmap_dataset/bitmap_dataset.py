@@ -1,16 +1,12 @@
 import math
-import time
 
-import numpy as np
-
-from Classifier.AbstractDataset import AbstractDataset
+from Classifier.abstract_datasets.abstract_dataset import AbstractDataset
 from pyroaring import BitMap
 import copy
 from random import shuffle
 
-from Classifier.DictDataset.DictDataset import count_foil_grow
-from Classifier.Literal import Literal
-from Classifier.Rule import Rule
+from Classifier.literal import Literal
+from Classifier.rule import Rule
 
 
 class BitmapDataset(AbstractDataset):
@@ -186,3 +182,20 @@ class BitmapDataset(AbstractDataset):
                     new_rule.add(self.col_dicts[col][value])
         return new_rule
 
+def count_foil_grow(p0, n0, p, n):
+    if p0 == 0 and n0 == 0:
+        if p == 0:
+            return -math.inf
+        try:
+            return p * (p / (p + n))
+        except (ZeroDivisionError, ValueError):
+            return -math.inf
+    else:
+        if p == 0:
+            return -math.inf
+        if n == 0 and n0 == 0:
+            return p - p0
+        try:
+            return p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2))
+        except (ZeroDivisionError, ValueError):
+            return -math.inf

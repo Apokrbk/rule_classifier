@@ -2,10 +2,9 @@ import math
 import pandas as pd
 import unittest
 
-from Classifier.NpArrayDataset.NpArrayDataset import count_foil_grow, NpArrayDataset
-from Classifier.Literal import Literal
-from Classifier.NpArrayDataset.NpArrayDataset import NpArrayDataset
-from Classifier.Rule import Rule
+from Classifier.abstract_datasets.nparray_dataset.nparray_dataset import NpArrayDataset, count_foil_grow
+from Classifier.literal import Literal
+from Classifier.rule import Rule
 
 
 class TestNotebook(unittest.TestCase):
@@ -25,13 +24,13 @@ class TestNotebook(unittest.TestCase):
 
     # TEST IS ANY POS EXAMPLE
     def test_is_any_pos_example_true(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_is_any_pos_true.csv', encoding='utf-8',
+        df = pd.read_csv('test_files/testfile_7_not_all_n.csv', encoding='utf-8',
                          delimiter=',')
         ds = NpArrayDataset(1,df)
         self.assertEqual(True, ds.is_any_pos_example())
 
     def test_is_any_pos_example_false(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_is_any_pos_false.csv',
+        df = pd.read_csv('test_files/testfile_6_all_n.csv',
                          encoding='utf-8', delimiter=',')
         ds = NpArrayDataset(1,df)
         self.assertEqual(False, ds.is_any_pos_example())
@@ -64,7 +63,7 @@ class TestNotebook(unittest.TestCase):
 
     # TEST COUNT_P_N RULES
     def test_rule_count_p_n1(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', '1st')
         rule = Rule()
@@ -75,7 +74,7 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(4, n)
 
     def test_rule_count_p_n2(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', 'Crew')
         rule = Rule()
@@ -86,7 +85,7 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(4, n)
 
     def test_rule_count_p_n3(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', '1st')
         rule = Rule()
@@ -97,7 +96,7 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(4, n)
 
     def test_rule_count_p_n4(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         rule = Rule()
         ds = NpArrayDataset(1,df)
@@ -107,7 +106,7 @@ class TestNotebook(unittest.TestCase):
 
     #TEST DELETE COVERED
     def test_delete_covered_1(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         rule = Rule()
         ds = NpArrayDataset(1,df)
@@ -117,7 +116,7 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(len_before, len_after)
 
     def test_delete_covered_2(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', 'Crew')
         rule = Rule()
@@ -129,7 +128,7 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(len_before-8, len_after)
 
     def test_delete_covered_3(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', '1st')
         rule = Rule()
@@ -142,7 +141,7 @@ class TestNotebook(unittest.TestCase):
 
     #TEST DELETE NOT COVERED
     def test_delete_not_covered_1(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         rule = Rule()
         ds = NpArrayDataset(1,df)
@@ -152,7 +151,7 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(0, len_after)
 
     def test_delete_not_covered_2(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', 'Crew')
         rule = Rule()
@@ -164,7 +163,7 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(len_before - 24, len_after)
 
     def test_delete_not_covered_3(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', '1st')
         rule = Rule()
@@ -177,7 +176,7 @@ class TestNotebook(unittest.TestCase):
 
     #TEST SPLIT INTO GROWSET PRUNESET
     def test_split_into_growset_pruneset_1(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         ds = NpArrayDataset(1,df)
         grow, prune = ds.split_into_growset_pruneset()
@@ -186,14 +185,14 @@ class TestNotebook(unittest.TestCase):
 
     #TEST LENGTH
     def test_length_dataset_1(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_literal_count_p_n_1.csv',
+        df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         ds = NpArrayDataset(1,df)
         self.assertEqual(32, ds.length())
 
     #TEST PRUNE RULE
     def test_prune_rule_1(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_find_best_num_3.csv',
+        df = pd.read_csv('test_files/testfile_3.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('Sex', 'in', 'Female')
         l2 = Literal('Sex', 'in', 'Male')
@@ -207,7 +206,7 @@ class TestNotebook(unittest.TestCase):
 
     #TEST GROW RULE
     def test_grow_rule_1(self):
-        df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/dane_testowe/test_find_best_num_4.csv',
+        df = pd.read_csv('test_files/testfile_4.csv',
                          encoding='utf-8', delimiter=';')
         ds = NpArrayDataset(0,df)
         rule = ds.grow_rule()

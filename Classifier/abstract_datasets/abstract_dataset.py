@@ -23,6 +23,10 @@ class AbstractDataset:
         pass
 
     @abstractmethod
+    def unmake_rule(self, rule):
+        pass
+
+    @abstractmethod
     def prune_rule(self, rule):
         pass
 

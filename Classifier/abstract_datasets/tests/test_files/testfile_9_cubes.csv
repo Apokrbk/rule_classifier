@@ -1,0 +1,33 @@
+ClassOfSeat;Sex;Age;Class
+1st;Male;Very Young;0
+2nd;Male;Very Old;0
+3rd;Male;Very Old;0
+Crew;Male;Very Old;0
+1st;Female;Very Old;0
+2nd;Female;Very Young;0
+3rd;Female;Very Old;0
+Crew;Female;Very Young;0
+1st;Male;Very Old;0
+2nd;Male;Very Old;0
+3rd;Male;Very Old;0
+Crew;Male;Very Old;0
+1st;Female;Very Old;0
+2nd;Female;Very Young;0
+3rd;Female;Very Young;0
+Crew;Female;Very Young;0
+1st;Male;Young;1
+2nd;Male;Young;1
+3rd;Male;Young;1
+Crew;Male;Middle;1
+1st;Female;Middle;1
+2nd;Female;Old;1
+3rd;Female;Young;1
+Crew;Female;Middle;1
+1st;Male;Young;1
+2nd;Male;Old;1
+3rd;Male;Middle;1
+Crew;Male;Young;1
+1st;Female;Middle;1
+2nd;Female;Middle;1
+3rd;Female;Middle;1
+Crew;Female;Middle;1

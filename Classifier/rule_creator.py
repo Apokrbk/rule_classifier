@@ -5,9 +5,9 @@ import pandas as pd
 
 import time
 
-from Classifier.BitmapDataset.BitmapDataset import BitmapDataset
-from Classifier.DictDataset.DictDataset import DictDataset
-from Classifier.NpArrayDataset.NpArrayDataset import NpArrayDataset
+from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
+from Classifier.abstract_datasets.dict_dataset.dict_dataset import DictDataset
+from Classifier.abstract_datasets.nparray_dataset.nparray_dataset import NpArrayDataset
 
 
 def create_rules(trainset):
@@ -42,27 +42,29 @@ def split_into_trainset_testset(df, ratio):
     testset.index = range(len(testset))
     return trainset, testset
 
+
 def cubes_for_numeric_data(df, num_of_intervals):
     numeric_cols = df._get_numeric_data().columns
     numeric_cols = numeric_cols[:-1]
     for i in range(0, len(numeric_cols)):
         np_array = np.array(df[numeric_cols[i]])
-        interval_p = 100/num_of_intervals
-        df.insert(0, numeric_cols[i]+"__", None)
+        interval_p = 100 / num_of_intervals
+        df.insert(0, numeric_cols[i] + "__", None)
         for j in range(0, num_of_intervals):
             if j == num_of_intervals - 1:
-                perc = np.percentile(np_array,j*interval_p)
-                df.loc[(df[numeric_cols[i]] >= perc), numeric_cols[i]+"__"] = str("P"+str(j))
-            elif j==0:
+                perc = np.percentile(np_array, j * interval_p)
+                df.loc[(df[numeric_cols[i]] >= perc), numeric_cols[i] + "__"] = str("P" + str(j))
+            elif j == 0:
                 perc = np.percentile(np_array, interval_p)
-                df.loc[(df[numeric_cols[i]] < perc), numeric_cols[i]+"__"] = str("P"+str(j))
+                df.loc[(df[numeric_cols[i]] < perc), numeric_cols[i] + "__"] = str("P" + str(j))
             else:
-                perc_from = np.percentile(np_array, j*interval_p)
-                perc_to = np.percentile(np_array, (j+1)*interval_p)
+                perc_from = np.percentile(np_array, j * interval_p)
+                perc_to = np.percentile(np_array, (j + 1) * interval_p)
                 df.loc[
-                    (df[numeric_cols[i]] >= perc_from) & (df[numeric_cols[i]] < perc_to), numeric_cols[i]+"__"] = str("P"+str(j))
-        df = df.drop(numeric_cols[i],axis=1)
-        df = df.rename(index=str, columns={numeric_cols[i]+"__": numeric_cols[i]})
+                    (df[numeric_cols[i]] >= perc_from) & (df[numeric_cols[i]] < perc_to), numeric_cols[i] + "__"] = str(
+                    "P" + str(j))
+        df = df.drop(numeric_cols[i], axis=1)
+        df = df.rename(index=str, columns={numeric_cols[i] + "__": numeric_cols[i]})
     return df
 
 
@@ -82,7 +84,7 @@ def test_all(df_all, prod, iters):
     for j in range(0, iters):
         c_df = copy.deepcopy(df)
         start = time.time()
-        dataset = NpArrayDataset(prod, df_train)
+        dataset = BitmapDataset(prod, df_train)
         rules = create_rules(dataset)
         end = time.time()
         for i in range(0, len(rules)):
@@ -92,7 +94,7 @@ def test_all(df_all, prod, iters):
             p_all += p
             n_all += n
             c_df = delete_covered(c_df, rules[i])
-        time_all += (end-start)
+        time_all += (end - start)
         rules_all += len(rules)
     tp = p_all
     fp = n_all
@@ -106,9 +108,9 @@ def test_all(df_all, prod, iters):
     print("Precision: " + str(precision))
     print("Recall: " + str(recall))
     print("Accuracy: " + str(accuracy))
-    print("Average time: " + str(time_all/iters))
+    print("Average time: " + str(time_all / iters))
     print("Average number of rules: " + str(rules_all / iters))
-    print("Average errors: " + str((fp+fn)/iters))
+    print("Average errors: " + str((fp + fn) / iters))
 
 
 def delete_covered(growset, rule):
@@ -128,25 +130,22 @@ def delete_covered(growset, rule):
     return growset
 
 
-# print("TITANIC")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/titanic3.csv',
-#                          encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df, 5)
-# test_all(df, 1, 1)
-#
+
+
+
 print("MUSHROOM")
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
+df = pd.read_csv('data_files/mushroom.csv',
                  encoding='utf-8', delimiter=';')
-test_all(df, 1, 10)
+test_all(df, 1, 1)
 
 # print("HYPOTHYROID")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/hypothyroid.csv',
+# df = pd.read_csv('data_files/hypothyroid.csv',
 #                  encoding='utf-8', delimiter=';')
 # df = cubes_for_numeric_data(df,10)
 # test_all(df, 1, 10)
 
 # print("PHONEME")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/phoneme.csv',
+# df = pd.read_csv('data_files/phoneme.csv',
 #                  encoding='utf-8', delimiter=';')
 # df = cubes_for_numeric_data(df,10)
 # test_all(df, 1, 10)

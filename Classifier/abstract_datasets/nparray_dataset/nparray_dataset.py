@@ -1,15 +1,15 @@
 import copy
 import math
 import random
-import time
 
-from Classifier.AbstractDataset import AbstractDataset
+from Classifier.abstract_datasets.abstract_dataset import AbstractDataset
 import numpy as np
 import pandas as pd
 
+
 pd.options.mode.chained_assignment = None
-from Classifier.Literal import Literal
-from Classifier.Rule import Rule
+from Classifier.literal import Literal
+from Classifier.rule import Rule
 
 
 class NpArrayDataset(AbstractDataset):
@@ -222,7 +222,6 @@ class NpArrayDataset(AbstractDataset):
     def length(self):
         return len(self.col_val_tables_pos[0][0]) + len(self.col_val_tables_neg[0][0])
 
-
 def count_foil_grow(p0, n0, p, n):
     if p0 == 0 and n0 == 0:
         if p == 0:
@@ -240,3 +239,4 @@ def count_foil_grow(p0, n0, p, n):
             return p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2))
         except (ZeroDivisionError, ValueError):
             return -math.inf
+

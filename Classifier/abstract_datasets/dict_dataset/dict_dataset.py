@@ -1,14 +1,10 @@
 import pandas as pd
 import math
 import copy
-import numpy as np
 
-from Classifier.AbstractDataset import AbstractDataset
-from Classifier.Literal import Literal
-from Classifier.Rule import Rule
-
-
-
+from Classifier.abstract_datasets.abstract_dataset import AbstractDataset
+from Classifier.literal import Literal
+from Classifier.rule import Rule
 
 
 class DictDataset(AbstractDataset):
@@ -207,21 +203,20 @@ class DictDataset(AbstractDataset):
 
     def length(self):
         return len(self.df)
-
-
 def count_foil_grow(p0, n0, p, n):
     if p0 == 0 and n0 == 0:
         if p == 0:
             return -math.inf
         try:
-            return p * (p/(p+n))
+            return p * (p / (p + n))
         except (ZeroDivisionError, ValueError):
             return -math.inf
     else:
         if p == 0:
             return -math.inf
+        if n == 0 and n0 == 0:
+            return p - p0
         try:
             return p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2))
         except (ZeroDivisionError, ValueError):
             return -math.inf
-
