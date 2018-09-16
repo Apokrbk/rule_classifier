@@ -8,8 +8,8 @@ from Classifier.rule import Rule
 
 
 class DictDataset(AbstractDataset):
-    def __init__(self, prod,dataset):
-        super().__init__(prod,dataset)
+    def __init__(self, prod, dataset):
+        super().__init__(prod, dataset)
         self.df = dataset
         self.dict = dataset.to_dict()
         self.numeric_cols, self.char_cols = self.split_into_numeric_car_cols()
@@ -37,7 +37,7 @@ class DictDataset(AbstractDataset):
         idx = set()
         for i in range(0, len(self.df)):
             to_delete = True
-            if len(rule.literals)==0:
+            if len(rule.literals) == 0:
                 to_delete = False
             for j in range(0, len(rule.literals)):
                 if not rule.literals[j].value_covered_by_literal(self.dict[rule.literals[j].var_name][i]):
@@ -56,10 +56,11 @@ class DictDataset(AbstractDataset):
         while True:
             p0, n0 = growset.count_p_n_rule(rule)
             best_foil = -math.inf
+            best_l = None
             for i in range(0, len(list(growset.dict.keys())) - 1):
                 col_name = list(growset.dict.keys())[i]
                 col_values = list(set(growset.dict[col_name].values()))
-                l,foil = growset.find_best_literal(p0,n0,col_values, col_name)
+                l, foil = growset.find_best_literal(p0, n0, col_values, col_name)
                 if foil > best_foil:
                     best_l = copy.deepcopy(l)
                     best_foil = foil
@@ -69,12 +70,12 @@ class DictDataset(AbstractDataset):
             growset.delete_not_covered(rule)
         return rule
 
-    def find_best_literal(self,p0,n0,col_values,col_name):
+    def find_best_literal(self, p0, n0, col_values, col_name):
         if col_name in self.numeric_cols:
             l, foil = self.find_best_num_literal(p0, n0, col_values, col_name)
         else:
             l, foil = self.find_best_char_literal(p0, n0, col_values, col_name)
-        return l,foil
+        return l, foil
 
     def prune_rule(self, rule):
         not_pruned_rule = copy.deepcopy(rule)
@@ -88,14 +89,14 @@ class DictDataset(AbstractDataset):
                     rule.delete_literal(not_pruned_rule.literals[i])
             if p == 0:
                 rule.delete_literal(not_pruned_rule.literals[i])
-        p,n = self.count_p_n_rule(rule)
-        if p==0 or n>=p or len(rule.literals)==0:
+        p, n = self.count_p_n_rule(rule)
+        if p == 0 or n >= p or len(rule.literals) == 0:
             return None
         else:
             return rule
 
     def split_into_growset_pruneset(self):
-        if self.prod==1:
+        if self.prod == 1:
             trainset = self.df.sample(frac=1)
         else:
             trainset = self.df
@@ -160,26 +161,27 @@ class DictDataset(AbstractDataset):
         best_foil = -math.inf
         best_l = None
         for i in range(0, len(unique_values)):
-            l = Literal(atr_col_name, '<', unique_values[i])
-            p, n = self.count_p_n_literal(l)
+            literal = Literal(atr_col_name, '<', unique_values[i])
+            p, n = self.count_p_n_literal(literal)
             tmp_foil = count_foil_grow(p0, n0, p, n)
             if tmp_foil > best_foil:
                 best_foil = tmp_foil
-                best_l = copy.deepcopy(l)
-            l = Literal(atr_col_name, '>', unique_values[i])
-            p, n = self.count_p_n_literal(l)
+                best_l = copy.deepcopy(literal)
+            literal = Literal(atr_col_name, '>', unique_values[i])
+            p, n = self.count_p_n_literal(literal)
             tmp_foil = count_foil_grow(p0, n0, p, n)
             if tmp_foil > best_foil:
                 best_foil = tmp_foil
-                best_l = copy.deepcopy(l)
+                best_l = copy.deepcopy(literal)
         return best_l, best_foil
 
     def find_best_char_literal(self, p0, n0, unique_values, atr_col_name):
         best_foil = -math.inf
         p_to_n = list()
+        best_l = None
         for i in range(0, len(unique_values)):
-            l = Literal(atr_col_name, 'in', unique_values[i])
-            p, n = self.count_p_n_literal(l)
+            literal = Literal(atr_col_name, 'in', unique_values[i])
+            p, n = self.count_p_n_literal(literal)
             if n == 0:
                 p_to_n.append(math.inf)
             else:
@@ -190,12 +192,12 @@ class DictDataset(AbstractDataset):
         values_to_literal = list()
         for i in range(0, len(unique_values)):
             values_to_literal.append(df.at[i, 'value'])
-            l = Literal(atr_col_name, 'in', values_to_literal)
-            p, n = self.count_p_n_literal(l)
+            literal = Literal(atr_col_name, 'in', values_to_literal)
+            p, n = self.count_p_n_literal(literal)
             foil = count_foil_grow(p0, n0, p, n)
             if foil > best_foil:
                 best_foil = foil
-                best_l = copy.deepcopy(l)
+                best_l = copy.deepcopy(literal)
         if best_foil == -math.inf:
             return None, best_foil
         else:
@@ -203,6 +205,8 @@ class DictDataset(AbstractDataset):
 
     def length(self):
         return len(self.df)
+
+
 def count_foil_grow(p0, n0, p, n):
     if p0 == 0 and n0 == 0:
         if p == 0:

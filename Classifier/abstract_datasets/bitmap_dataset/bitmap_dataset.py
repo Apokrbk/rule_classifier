@@ -9,6 +9,17 @@ from Classifier.literal import Literal
 from Classifier.rule import Rule
 
 
+def row_covered_by_rule(row, rule):
+    if len(rule) == 0:
+        return False
+    rule_len = len(rule)
+    result = row & rule
+    if len(result) == rule_len:
+        return True
+    else:
+        return False
+
+
 class BitmapDataset(AbstractDataset):
     def __init__(self, prod=1, dataset=None, col_names=None, col_dicts=None, rows=None, uniq_value=None):
         super().__init__(1, dataset)
@@ -53,27 +64,17 @@ class BitmapDataset(AbstractDataset):
         return it
 
     def delete_covered(self, rule):
-        self.rows = [x for x in self.rows if not self.row_covered_by_rule(x, rule)]
+        self.rows = [x for x in self.rows if not row_covered_by_rule(x, rule)]
 
     def delete_not_covered(self, rule):
-        self.rows = [x for x in self.rows if self.row_covered_by_rule(x, rule)]
-
-    def row_covered_by_rule(self, row, rule):
-        if len(rule) == 0:
-            return False
-        rule_len = len(rule)
-        result = row & rule
-        if len(result) == rule_len:
-            return True
-        else:
-            return False
+        self.rows = [x for x in self.rows if row_covered_by_rule(x, rule)]
 
     def grow_rule(self):
         rule = BitMap()
         p0, n0 = self.count_p_n_rule(rule)
         best_foil = -math.inf
-        l = self.find_first_literal(best_foil, n0, p0, rule)
-        rule.add(l)
+        literal = self.find_first_literal(best_foil, n0, p0, rule)
+        rule.add(literal)
         self.check_other_literals(rule)
         return rule
 
@@ -94,16 +95,17 @@ class BitmapDataset(AbstractDataset):
                     rule.remove(i)
 
     def find_first_literal(self, best_foil, n0, p0, rule):
+        literal = None
         for i in range(2, self.uniq_val):
             if i not in rule:
                 rule.add(i)
                 p, n = self.count_p_n_rule(rule)
                 foil = count_foil_grow(p0, n0, p, n)
                 if foil > best_foil:
-                    l = i
+                    literal = i
                     best_foil = foil
                 rule.remove(i)
-        return l
+        return literal
 
     def prune_rule(self, rule):
         literals = list(rule)
@@ -142,9 +144,9 @@ class BitmapDataset(AbstractDataset):
         p = 0
         n = 0
         for x in self.rows:
-            if self.row_covered_by_rule(x, p_rule):
+            if row_covered_by_rule(x, p_rule):
                 p += 1
-            elif self.row_covered_by_rule(x, n_rule):
+            elif row_covered_by_rule(x, n_rule):
                 n += 1
         return p, n
 
@@ -152,7 +154,7 @@ class BitmapDataset(AbstractDataset):
         pos = BitMap()
         pos.add(1)
         for x in self.rows:
-            if self.row_covered_by_rule(x, pos):
+            if row_covered_by_rule(x, pos):
                 return True
         return False
 
@@ -165,13 +167,17 @@ class BitmapDataset(AbstractDataset):
         for i in range(0, len(literals)):
             for j in range(0, len(self.col_dicts)):
                 if literals[i] in list(self.col_dicts[j].values()):
-                    l = Literal(self.col_names[j], 'in',
-                                list(self.col_dicts[j].keys())[list(self.col_dicts[j].values()).index(literals[i])])
-                    new_rule.add_literal(l)
+                    literal = Literal(self.col_names[j], 'in',
+                                      list(self.col_dicts[j].keys())[
+                                          list(self.col_dicts[j].values()).index(literals[i])])
+                    new_rule.add_literal(literal)
         return new_rule
 
     def unmake_rule(self, rule):
         new_rule = BitMap()
+        if len(rule.literals) == 0:
+            return BitMap()
+        col = 0
         for i in range(0, len(rule.literals)):
             for j in range(0, len(self.col_names)):
                 if rule.literals[i].var_name == self.col_names[j]:
@@ -181,6 +187,7 @@ class BitmapDataset(AbstractDataset):
                 if rule.literals[i].value_covered_by_literal(value):
                     new_rule.add(self.col_dicts[col][value])
         return new_rule
+
 
 def count_foil_grow(p0, n0, p, n):
     if p0 == 0 and n0 == 0:
