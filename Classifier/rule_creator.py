@@ -68,7 +68,7 @@ def cubes_for_numeric_data(df, num_of_intervals):
     return df
 
 
-def test_all(df_all, prod, iters):
+def test_all(df_all, prod, iters, dataset_type):
     df_train, df = split_into_trainset_testset(df_all, 0.8)
     all_ex = len(df)
     p_ex = df[df.columns[-1]].sum()
@@ -84,7 +84,7 @@ def test_all(df_all, prod, iters):
     for j in range(0, iters):
         c_df = copy.deepcopy(df)
         start = time.time()
-        dataset = BitmapDataset(prod, df_train)
+        dataset = dataset_type(prod, df_train)
         rules = create_rules(dataset)
         end = time.time()
         for i in range(0, len(rules)):
@@ -136,7 +136,7 @@ def delete_covered(growset, rule):
 print("MUSHROOM")
 df = pd.read_csv('data_files/mushroom.csv',
                  encoding='utf-8', delimiter=';')
-test_all(df, 1, 1)
+test_all(df, 1, 1, DictDataset)
 
 # print("HYPOTHYROID")
 # df = pd.read_csv('data_files/hypothyroid.csv',
