@@ -134,16 +134,16 @@ def delete_covered(growset, rule):
 # df = cubes_for_numeric_data(df, 5)
 # test_all(df, 1, 1)
 #
-# print("MUSHROOM")
-# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
-#                  encoding='utf-8', delimiter=';')
-# test_all(df, 1, 10)
-
-print("HYPOTHYROID")
-df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/hypothyroid.csv',
+print("MUSHROOM")
+df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/mushroom.csv',
                  encoding='utf-8', delimiter=';')
-df = cubes_for_numeric_data(df,10)
 test_all(df, 1, 10)
+
+# print("HYPOTHYROID")
+# df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/hypothyroid.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,10)
+# test_all(df, 1, 10)
 
 # print("PHONEME")
 # df = pd.read_csv('C:/Users/damia/Desktop/pracainz/dane/phoneme.csv',

@@ -6,6 +6,7 @@ import time
 from Classifier.AbstractDataset import AbstractDataset
 import numpy as np
 import pandas as pd
+
 pd.options.mode.chained_assignment = None
 from Classifier.Literal import Literal
 from Classifier.Rule import Rule
@@ -31,14 +32,6 @@ class NpArrayDataset(AbstractDataset):
                 self.col_unique_values.append(dataset[self.col_names[i]].unique())
                 self.col_val_tables_pos.append(list())
                 self.col_val_tables_neg.append(list())
-            col_val_tables_pos_tmp = list()
-            col_val_tables_neg_tmp = list()
-            for i in range(0, len(self.col_names)):
-                col_val_tables_pos_tmp.append(list())
-                col_val_tables_neg_tmp.append(list())
-                for j in range(0, len(self.col_unique_values[i])):
-                    col_val_tables_pos_tmp[i].append(list())
-                    col_val_tables_neg_tmp[i].append(list())
             pos = dataset.loc[dataset[dataset.columns[-1]] == 1]
             neg = dataset.loc[dataset[dataset.columns[-1]] == 0]
             for i in range(0, len(self.col_names)):
@@ -48,7 +41,7 @@ class NpArrayDataset(AbstractDataset):
                         pos.loc[(pos[self.col_names[i]] != self.col_unique_values[i][j]), "__temp__"] = False
                     else:
                         pos["__temp__"] = 1
-                    if len(neg) != 0 :
+                    if len(neg) != 0:
                         neg.loc[(neg[self.col_names[i]] == self.col_unique_values[i][j]), "__temp__"] = True
                         neg.loc[(neg[self.col_names[i]] != self.col_unique_values[i][j]), "__temp__"] = False
                     else:
@@ -127,9 +120,9 @@ class NpArrayDataset(AbstractDataset):
         for i in range(0, len(rule.literals)):
             for j in range(0, len(self.col_names)):
                 if rule.literals[i].var_name == self.col_names[j]:
-                    col=j
+                    col = j
                     break
-            for j in range(0,len(self.col_unique_values[col])):
+            for j in range(0, len(self.col_unique_values[col])):
                 if rule.literals[i].value_covered_by_literal(self.col_unique_values[col][j]):
                     new_rule.append([col, j])
         return new_rule
@@ -142,7 +135,9 @@ class NpArrayDataset(AbstractDataset):
             p, n = self.count_p_n_rule(rule)
             p0, n0 = self.count_p_n_rule(pruned_rule)
             if p0 != 0 and p != 0:
-                if p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) <= 0:
+                if n0 == 0 and n == 0 and p > p0:
+                    pass
+                elif p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) <= 0:
                     del rule[i]
             if p == 0:
                 del rule[i]
@@ -160,6 +155,16 @@ class NpArrayDataset(AbstractDataset):
         else:
             idx_p = range(0, count_p_growset)
             idx_n = range(0, count_n_growset)
+        col_val_tables_neg_grow, col_val_tables_neg_prune, col_val_tables_pos_grow, col_val_tables_pos_prune = self.split_by_idx(
+            idx_n, idx_p)
+        return NpArrayDataset(prod=self.prod, col_val_tables_pos=col_val_tables_pos_grow,
+                              col_val_tables_neg=col_val_tables_neg_grow,
+                              col_names=self.col_names, col_unique_values=self.col_unique_values), \
+               NpArrayDataset(prod=self.prod, col_val_tables_pos=col_val_tables_pos_prune,
+                              col_val_tables_neg=col_val_tables_neg_prune,
+                              col_names=self.col_names, col_unique_values=self.col_unique_values)
+
+    def split_by_idx(self, idx_n, idx_p):
         col_val_tables_pos_grow = list()
         col_val_tables_neg_grow = list()
         col_val_tables_pos_prune = list()
@@ -174,19 +179,11 @@ class NpArrayDataset(AbstractDataset):
                 col_val_tables_neg_grow[i].append(np.take(self.col_val_tables_neg[i][j], idx_n))
                 col_val_tables_pos_prune[i].append(np.delete(self.col_val_tables_pos[i][j], idx_p))
                 col_val_tables_neg_prune[i].append(np.delete(self.col_val_tables_neg[i][j], idx_n))
-        return NpArrayDataset(prod=self.prod, col_val_tables_pos=col_val_tables_pos_grow,
-                              col_val_tables_neg=col_val_tables_neg_grow,
-                              col_names=self.col_names, col_unique_values=self.col_unique_values), \
-               NpArrayDataset(prod=self.prod, col_val_tables_pos=col_val_tables_pos_prune,
-                              col_val_tables_neg=col_val_tables_neg_prune,
-                              col_names=self.col_names, col_unique_values=self.col_unique_values)
+        return col_val_tables_neg_grow, col_val_tables_neg_prune, col_val_tables_pos_grow, col_val_tables_pos_prune
 
     def count_p_n_rule(self, rule):
         p_rule, n_rule = self.make_rules_from_iters(rule)
         return np.count_nonzero(p_rule == True), np.count_nonzero(n_rule == True)
-
-
-
 
     def make_rules_from_iters(self, rule):
         if rule is None:
