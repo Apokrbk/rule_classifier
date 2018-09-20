@@ -2,7 +2,9 @@ import copy
 import math
 import numpy as np
 import pandas as pd
-
+from sklearn import datasets
+from sklearn.cluster import KMeans
+import sklearn.metrics as sm
 import time
 
 from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
@@ -27,7 +29,7 @@ def create_rules(trainset):
             new_rule = trainset.make_rule(new_rule)
             rules.append(new_rule)
             # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
-        if max_iter >= 3 or trainset.length() < 60 or not trainset.is_any_pos_example():
+        if max_iter >= 5 or trainset.length() < 60 or not trainset.is_any_pos_example():
             break
     return rules
 
@@ -47,24 +49,7 @@ def cubes_for_numeric_data(df, num_of_intervals):
     numeric_cols = df._get_numeric_data().columns
     numeric_cols = numeric_cols[:-1]
     for i in range(0, len(numeric_cols)):
-        np_array = np.array(df[numeric_cols[i]])
-        interval_p = 100 / num_of_intervals
-        df.insert(0, numeric_cols[i] + "__", None)
-        for j in range(0, num_of_intervals):
-            if j == num_of_intervals - 1:
-                perc = np.percentile(np_array, j * interval_p)
-                df.loc[(df[numeric_cols[i]] >= perc), numeric_cols[i] + "__"] = str("P" + str(j))
-            elif j == 0:
-                perc = np.percentile(np_array, interval_p)
-                df.loc[(df[numeric_cols[i]] < perc), numeric_cols[i] + "__"] = str("P" + str(j))
-            else:
-                perc_from = np.percentile(np_array, j * interval_p)
-                perc_to = np.percentile(np_array, (j + 1) * interval_p)
-                df.loc[
-                    (df[numeric_cols[i]] >= perc_from) & (df[numeric_cols[i]] < perc_to), numeric_cols[i] + "__"] = str(
-                    "P" + str(j))
-        df = df.drop(numeric_cols[i], axis=1)
-        df = df.rename(index=str, columns={numeric_cols[i] + "__": numeric_cols[i]})
+        df[numeric_cols[i]] = pd.qcut(df[numeric_cols[i]], num_of_intervals, duplicates='drop').astype(str)
     return df
 
 
@@ -136,16 +121,16 @@ def delete_covered(growset, rule):
 print("MUSHROOM")
 df = pd.read_csv('data_files/mushroom.csv',
                  encoding='utf-8', delimiter=';')
-test_all(df, 1, 1, DictDataset)
+test_all(df, 1, 10, NpArrayDataset)
 
-# print("HYPOTHYROID")
-# df = pd.read_csv('data_files/hypothyroid.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 10)
+print("HYPOTHYROID")
+df = pd.read_csv('data_files/hypothyroid.csv',
+                 encoding='utf-8', delimiter=';')
+df = cubes_for_numeric_data(df,10)
+test_all(df, 1, 10, NpArrayDataset)
 
-# print("PHONEME")
-# df = pd.read_csv('data_files/phoneme.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 10)
+print("PHONEME")
+df = pd.read_csv('data_files/phoneme.csv',
+                 encoding='utf-8', delimiter=';')
+df = cubes_for_numeric_data(df,10)
+test_all(df, 1, 10, NpArrayDataset)

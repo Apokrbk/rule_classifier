@@ -216,10 +216,19 @@ class NpArrayDataset(AbstractDataset):
         return act_rule_p, act_rule_n
 
     def is_any_pos_example(self):
+        if len(self.col_val_tables_pos[0]) == 0:
+            return False
         return len(self.col_val_tables_pos[0][0]) > 0
 
     def length(self):
-        return len(self.col_val_tables_pos[0][0]) + len(self.col_val_tables_neg[0][0])
+        if len(self.col_val_tables_pos[0]) == 0 and len(self.col_val_tables_neg[0]) == 0:
+            return 0
+        elif len(self.col_val_tables_pos[0]) == 0:
+            return len(self.col_val_tables_neg[0][0])
+        elif len(self.col_val_tables_neg[0]) == 0:
+            return len(self.col_val_tables_pos[0][0])
+        else:
+            return len(self.col_val_tables_pos[0][0]) + len(self.col_val_tables_neg[0][0])
 
 
 def count_foil_grow(p0, n0, p, n):

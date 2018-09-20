@@ -35,31 +35,10 @@ class TestNotebook(unittest.TestCase):
         ds = NpArrayDataset(1,df)
         self.assertEqual(False, ds.is_any_pos_example())
 
-    # TEST LITERALS
-    def test_value_covered_by_literal_less_true(self):
-        l = Literal('test', '<', 15)
-        self.assertEqual(True, l.value_covered_by_literal(14))
-
-    def test_value_covered_by_literal_less_false(self):
-        l = Literal('test', '<', 15)
-        self.assertEqual(False, l.value_covered_by_literal(15))
-
-    def test_value_covered_by_literal_more_true(self):
-        l = Literal('test', '>', -15)
-        self.assertEqual(True, l.value_covered_by_literal(-14))
-
-    def test_value_covered_by_literal_more_false(self):
-        l = Literal('test', '>', -15)
-        self.assertEqual(False, l.value_covered_by_literal(-15))
-
-    def test_value_covered_by_literal_in_true(self):
-        l = Literal('test', 'in', ['1st', '2nd'])
-        self.assertEqual(True, l.value_covered_by_literal('1st'))
-
-    def test_value_covered_by_literal_in_false(self):
-        l = Literal('test', 'in', ['1st', '2nd'])
-        self.assertEqual(False, l.value_covered_by_literal('3rd'))
-
+    def test_is_any_pos_example_true_all_p(self):
+        df = pd.read_csv('test_files/testfile_10_all_p.csv', encoding='utf-8', delimiter=',')
+        ds = NpArrayDataset(1,df)
+        self.assertEqual(True, ds.is_any_pos_example())
 
     # TEST COUNT_P_N RULES
     def test_rule_count_p_n1(self):
@@ -190,6 +169,21 @@ class TestNotebook(unittest.TestCase):
         ds = NpArrayDataset(1,df)
         self.assertEqual(32, ds.length())
 
+    def test_length_dataset_2_no_rows(self):
+        df = pd.read_csv('test_files/testfile_11_no_rows.csv', encoding='utf-8', delimiter=',')
+        ds = NpArrayDataset(1,df)
+        self.assertEqual(0, ds.length())
+
+    def test_length_dataset_3_all_p(self):
+        df = pd.read_csv('test_files/testfile_10_all_p.csv', encoding='utf-8', delimiter=',')
+        ds = NpArrayDataset(1,df)
+        self.assertEqual(32, ds.length())
+
+    def test_length_dataset_4_all_n(self):
+        df = pd.read_csv('test_files/testfile_6_all_n.csv', encoding='utf-8', delimiter=',')
+        ds = NpArrayDataset(1,df)
+        self.assertEqual(32, ds.length())
+
     #TEST PRUNE RULE
     def test_prune_rule_1(self):
         df = pd.read_csv('test_files/testfile_3.csv',
@@ -212,5 +206,12 @@ class TestNotebook(unittest.TestCase):
         rule = ds.grow_rule()
         rule = ds.make_rule(rule)
         self.assertEqual("Sex in ['Female'] and Age in [7, 4, 6, 5, 9, 8] ", rule.to_string())
+
+    def test_grow_rule_2(self):
+        df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')
+        ds = NpArrayDataset(0,df)
+        rule = ds.grow_rule()
+        rule = ds.make_rule(rule)
+        self.assertEqual("a4 in ['f'] and a7 in ['c'] and a12 in ['k'] ", rule.to_string())
 
 

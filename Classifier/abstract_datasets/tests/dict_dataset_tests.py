@@ -23,42 +23,23 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(round(1.7531, 4), round(count_foil_grow(7, 3, 6, 1), 4))
 
     # TEST IS ANY POS EXAMPLE
-    def test_is_any_pos_example_true(self):
+    def test_is_any_pos_example_true_some_p_some_n(self):
         df = pd.read_csv('test_files/testfile_7_not_all_n.csv', encoding='utf-8',
                          delimiter=',')
         ds = DictDataset(1,df)
         self.assertEqual(True, ds.is_any_pos_example())
 
-    def test_is_any_pos_example_false(self):
+    def test_is_any_pos_example_false_all_n(self):
         df = pd.read_csv('test_files/testfile_6_all_n.csv',
                          encoding='utf-8', delimiter=',')
         ds = DictDataset(1,df)
         self.assertEqual(False, ds.is_any_pos_example())
 
-    # TEST LITERALS
-    def test_value_covered_by_literal_less_true(self):
-        l = Literal('test', '<', 15)
-        self.assertEqual(True, l.value_covered_by_literal(14))
+    def test_is_any_pos_example_true_all_p(self):
+        df = pd.read_csv('test_files/testfile_10_all_p.csv', encoding='utf-8', delimiter=',')
+        ds = DictDataset(1,df)
+        self.assertEqual(True, ds.is_any_pos_example())
 
-    def test_value_covered_by_literal_less_false(self):
-        l = Literal('test', '<', 15)
-        self.assertEqual(False, l.value_covered_by_literal(15))
-
-    def test_value_covered_by_literal_more_true(self):
-        l = Literal('test', '>', -15)
-        self.assertEqual(True, l.value_covered_by_literal(-14))
-
-    def test_value_covered_by_literal_more_false(self):
-        l = Literal('test', '>', -15)
-        self.assertEqual(False, l.value_covered_by_literal(-15))
-
-    def test_value_covered_by_literal_in_true(self):
-        l = Literal('test', 'in', ['1st', '2nd'])
-        self.assertEqual(True, l.value_covered_by_literal('1st'))
-
-    def test_value_covered_by_literal_in_false(self):
-        l = Literal('test', 'in', ['1st', '2nd'])
-        self.assertEqual(False, l.value_covered_by_literal('3rd'))
 
     # TEST DATASET COUNT_P_N LITERAL
     def test_literal_count_p_n1(self):
@@ -248,6 +229,21 @@ class TestNotebook(unittest.TestCase):
         ds = DictDataset(1,df)
         self.assertEqual(32, ds.length())
 
+    def test_length_dataset_2_no_rows(self):
+        df = pd.read_csv('test_files/testfile_11_no_rows.csv', encoding='utf-8', delimiter=',')
+        ds = DictDataset(1,df)
+        self.assertEqual(0, ds.length())
+
+    def test_length_dataset_3_all_p(self):
+        df = pd.read_csv('test_files/testfile_10_all_p.csv', encoding='utf-8', delimiter=',')
+        ds = DictDataset(1,df)
+        self.assertEqual(32, ds.length())
+
+    def test_length_dataset_4_all_n(self):
+        df = pd.read_csv('test_files/testfile_6_all_n.csv', encoding='utf-8', delimiter=',')
+        ds = DictDataset(1,df)
+        self.assertEqual(32, ds.length())
+
     #TEST FIND BEST NUM LITERAL
     def test_find_best_num_literal_1(self):
         df = pd.read_csv('test_files/testfile_1.csv',
@@ -318,4 +314,11 @@ class TestNotebook(unittest.TestCase):
         ds = DictDataset(0,df)
         rule = ds.grow_rule()
         self.assertEqual("Sex in ['Female'] and Age < 22 ", rule.to_string())
+
+    def test_grow_rule_2(self):
+        df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')
+        ds = DictDataset(0,df)
+        rule = ds.grow_rule()
+        rule = ds.make_rule(rule)
+        self.assertEqual("a4 in ['f'] and a7 in ['c'] and a12 in ['k'] ", rule.to_string())
 
