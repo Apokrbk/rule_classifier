@@ -16,7 +16,7 @@ class Rule:
         for literal in self.literals:
             string += literal.to_string()
             string += " and "
-        return string[:-4]
+        return string[:-5]
 
     def count_p_n(self, growset):
         p = 0

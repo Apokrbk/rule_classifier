@@ -26,27 +26,26 @@ class TestNotebook(unittest.TestCase):
     def test_is_any_pos_example_true_some_p_some_n(self):
         df = pd.read_csv('test_files/testfile_7_not_all_n.csv', encoding='utf-8',
                          delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         self.assertEqual(True, ds.is_any_pos_example())
 
     def test_is_any_pos_example_false_all_n(self):
         df = pd.read_csv('test_files/testfile_6_all_n.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         self.assertEqual(False, ds.is_any_pos_example())
 
     def test_is_any_pos_example_true_all_p(self):
         df = pd.read_csv('test_files/testfile_10_all_p.csv', encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         self.assertEqual(True, ds.is_any_pos_example())
-
 
     # TEST DATASET COUNT_P_N LITERAL
     def test_literal_count_p_n1(self):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', ['1st', '2nd'])
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         p, n = ds.count_p_n_literal(l)
         self.assertEqual(8, p)
         self.assertEqual(8, n)
@@ -55,7 +54,7 @@ class TestNotebook(unittest.TestCase):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('ClassOfSeat', 'in', ['xab', 'asdas'])
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         p, n = ds.count_p_n_literal(l)
         self.assertEqual(0, p)
         self.assertEqual(0, n)
@@ -64,7 +63,7 @@ class TestNotebook(unittest.TestCase):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('Age', '>', 1000)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         p, n = ds.count_p_n_literal(l)
         self.assertEqual(0, p)
         self.assertEqual(4, n)
@@ -73,7 +72,7 @@ class TestNotebook(unittest.TestCase):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         l = Literal('Sex', 'in', 'Male')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         p, n = ds.count_p_n_literal(l)
         self.assertEqual(8, p)
         self.assertEqual(8, n)
@@ -87,7 +86,7 @@ class TestNotebook(unittest.TestCase):
         rule = Rule()
         rule.add_literal(l)
         rule.add_literal(l2)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(1, p)
         self.assertEqual(1, n)
@@ -102,7 +101,7 @@ class TestNotebook(unittest.TestCase):
         rule.add_literal(l)
         rule.add_literal(l2)
         rule.add_literal(l3)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(4, p)
         self.assertEqual(0, n)
@@ -117,7 +116,7 @@ class TestNotebook(unittest.TestCase):
         rule.add_literal(l)
         rule.add_literal(l2)
         rule.add_literal(l3)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(0, p)
         self.assertEqual(0, n)
@@ -126,17 +125,17 @@ class TestNotebook(unittest.TestCase):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         rule = Rule()
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         p, n = ds.count_p_n_rule(rule)
         self.assertEqual(0, p)
         self.assertEqual(0, n)
 
-    #TEST DELETE COVERED
+    # TEST DELETE COVERED
     def test_delete_covered_1(self):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         rule = Rule()
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         len_before = ds.length()
         ds.delete_covered(rule)
         len_after = ds.length()
@@ -152,11 +151,11 @@ class TestNotebook(unittest.TestCase):
         rule.add_literal(l)
         rule.add_literal(l2)
         rule.add_literal(l3)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         len_before = ds.length()
         ds.delete_covered(rule)
         len_after = ds.length()
-        self.assertEqual(len_before-4, len_after)
+        self.assertEqual(len_before - 4, len_after)
 
     def test_delete_covered_3(self):
         df = pd.read_csv('test_files/testfile_8.csv',
@@ -166,18 +165,18 @@ class TestNotebook(unittest.TestCase):
         rule = Rule()
         rule.add_literal(l)
         rule.add_literal(l2)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         len_before = ds.length()
         ds.delete_covered(rule)
         len_after = ds.length()
-        self.assertEqual(len_before-2, len_after)
+        self.assertEqual(len_before - 2, len_after)
 
-    #TEST DELETE NOT COVERED
+    # TEST DELETE NOT COVERED
     def test_delete_not_covered_1(self):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
         rule = Rule()
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         len_before = ds.length()
         ds.delete_not_covered(rule)
         len_after = ds.length()
@@ -193,7 +192,7 @@ class TestNotebook(unittest.TestCase):
         rule.add_literal(l)
         rule.add_literal(l2)
         rule.add_literal(l3)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         len_before = ds.length()
         ds.delete_not_covered(rule)
         len_after = ds.length()
@@ -207,73 +206,73 @@ class TestNotebook(unittest.TestCase):
         rule = Rule()
         rule.add_literal(l)
         rule.add_literal(l2)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         len_before = ds.length()
         ds.delete_not_covered(rule)
         len_after = ds.length()
         self.assertEqual(len_before - 30, len_after)
 
-    #TEST SPLIT INTO GROWSET PRUNESET
+    # TEST SPLIT INTO GROWSET PRUNESET
     def test_split_into_growset_pruneset_1(self):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         grow, prune = ds.split_into_growset_pruneset()
         self.assertEqual(21, grow.length())
         self.assertEqual(11, prune.length())
 
-    #TEST LENGTH
+    # TEST LENGTH
     def test_length_dataset_1(self):
         df = pd.read_csv('test_files/testfile_8.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         self.assertEqual(32, ds.length())
 
     def test_length_dataset_2_no_rows(self):
         df = pd.read_csv('test_files/testfile_11_no_rows.csv', encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         self.assertEqual(0, ds.length())
 
     def test_length_dataset_3_all_p(self):
         df = pd.read_csv('test_files/testfile_10_all_p.csv', encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         self.assertEqual(32, ds.length())
 
     def test_length_dataset_4_all_n(self):
         df = pd.read_csv('test_files/testfile_6_all_n.csv', encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         self.assertEqual(32, ds.length())
 
-    #TEST FIND BEST NUM LITERAL
+    # TEST FIND BEST NUM LITERAL
     def test_find_best_num_literal_1(self):
         df = pd.read_csv('test_files/testfile_1.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
-        best_l, best_foil = ds.find_best_literal(0,0,df['Age'].unique(), 'Age')
-        self.assertEqual(11.63636, round(best_foil,5))
+        ds = DictDataset(1, df)
+        best_l, best_foil = ds.find_best_literal(0, 0, df['Age'].unique(), 'Age')
+        self.assertEqual(11.63636, round(best_foil, 5))
         self.assertEqual('Age < 455', best_l.to_string())
 
     def test_find_best_num_literal_2(self):
         df = pd.read_csv('test_files/testfile_2.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
-        best_l, best_foil = ds.find_best_literal(0,0,df['Age'].unique(), 'Age')
-        self.assertEqual(16, round(best_foil,5))
+        ds = DictDataset(1, df)
+        best_l, best_foil = ds.find_best_literal(0, 0, df['Age'].unique(), 'Age')
+        self.assertEqual(16, round(best_foil, 5))
         self.assertEqual('Age < 95', best_l.to_string())
 
     def test_find_best_num_literal_3(self):
         df = pd.read_csv('test_files/testfile_3.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
-        best_l, best_foil = ds.find_best_literal(0,0,df['Age'].unique(), 'Age')
-        self.assertEqual(10, round(best_foil,5))
+        ds = DictDataset(1, df)
+        best_l, best_foil = ds.find_best_literal(0, 0, df['Age'].unique(), 'Age')
+        self.assertEqual(10, round(best_foil, 5))
         self.assertEqual('Age > 88', best_l.to_string())
 
     # TEST FIND BEST CHAR LITERAL
     def test_find_best_char_literal_1(self):
         df = pd.read_csv('test_files/testfile_1.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         best_l, best_foil = ds.find_best_literal(0, 0, df['Sex'].unique(), 'Sex')
         self.assertEqual(8, round(best_foil, 5))
         self.assertEqual("Sex in ['Male', 'Female']", best_l.to_string())
@@ -281,7 +280,7 @@ class TestNotebook(unittest.TestCase):
     def test_find_best_char_literal_2(self):
         df = pd.read_csv('test_files/testfile_2.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         best_l, best_foil = ds.find_best_literal(0, 0, df['ClassOfSeat'].unique(), 'ClassOfSeat')
         self.assertEqual(9, round(best_foil, 5))
         self.assertEqual("ClassOfSeat in ['1st', '3rd', 'Crew']", best_l.to_string())
@@ -289,12 +288,12 @@ class TestNotebook(unittest.TestCase):
     def test_find_best_char_literal_3(self):
         df = pd.read_csv('test_files/testfile_3.csv',
                          encoding='utf-8', delimiter=',')
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         best_l, best_foil = ds.find_best_literal(0, 0, df['Sex'].unique(), 'Sex')
         self.assertEqual(9.38889, round(best_foil, 5))
         self.assertEqual("Sex in ['Female']", best_l.to_string())
 
-    #TEST PRUNE RULE
+    # TEST PRUNE RULE
     def test_prune_rule_1(self):
         df = pd.read_csv('test_files/testfile_3.csv',
                          encoding='utf-8', delimiter=',')
@@ -303,22 +302,41 @@ class TestNotebook(unittest.TestCase):
         rule = Rule()
         rule.add_literal(l)
         rule.add_literal(l2)
-        ds = DictDataset(1,df)
+        ds = DictDataset(1, df)
         rule = ds.prune_rule(rule)
-        self.assertEqual("Sex in Female ", rule.to_string())
+        self.assertEqual("Sex in Female", rule.to_string())
 
-    #TEST GROW RULE
+    def test_prune_rule_2(self):
+        df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')
+        ds = DictDataset(0, df)
+        l = Literal('a5', 'in', ['c', 'f', 'm', 'p', 's', 'y'])
+        rule = Rule()
+        rule.add_literal(l)
+        rule = ds.prune_rule(rule)
+        self.assertEqual("a5 in ['c', 'f', 'm', 'p', 's', 'y']", rule.to_string())
+
+    def test_prune_rule_3(self):
+        df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')
+        ds = DictDataset(0, df)
+        l = Literal('a5', 'in', ['c', 'f', 'm', 'p', 's', 'y'])
+        l2 = Literal('a3', 'in', 'e')
+        rule = Rule()
+        rule.add_literal(l)
+        rule.add_literal(l2)
+        rule = ds.prune_rule(rule)
+        self.assertEqual("a5 in ['c', 'f', 'm', 'p', 's', 'y']", rule.to_string())
+
+    # TEST GROW RULE
     def test_grow_rule_1(self):
         df = pd.read_csv('test_files/testfile_4.csv',
                          encoding='utf-8', delimiter=';')
-        ds = DictDataset(0,df)
+        ds = DictDataset(0, df)
         rule = ds.grow_rule()
-        self.assertEqual("Sex in ['Female'] and Age < 22 ", rule.to_string())
+        self.assertEqual("Sex in ['Female'] and Age < 22", rule.to_string())
 
     def test_grow_rule_2(self):
         df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')
-        ds = DictDataset(0,df)
+        ds = DictDataset(0, df)
         rule = ds.grow_rule()
         rule = ds.make_rule(rule)
-        self.assertEqual("a4 in ['f'] and a7 in ['c'] and a12 in ['k'] ", rule.to_string())
-
+        self.assertEqual("a5 in ['c', 'f', 'm', 'p', 's', 'y']", rule.to_string())

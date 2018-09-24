@@ -1,3 +1,5 @@
+import time
+
 from Classifier.literal import Literal
 from Classifier.rule import Rule
 import copy
@@ -67,9 +69,34 @@ class NpArrayDataset(AbstractDataset):
                 self.col_val_tables_neg[i][j] = np.take(self.col_val_tables_neg[i][j], idx_n)[0]
 
     def grow_rule(self):
+        # best_rule = list()
+        # best_foil = -math.inf
+        # for i in range(0, len(self.col_names)):
+        #     tmp_l, tmp_foil = self.find_best_literal_from_variable(i, 0, 0, best_rule)
+        #     if tmp_foil > best_foil:
+        #         best_rule = copy.deepcopy(tmp_l)
+        #         best_foil = tmp_foil
+        # if best_foil == -math.inf:
+        #     return best_rule
+        # while True:
+        #     best_l = None
+        #     best_foil = -math.inf
+        #     p0,n0 = self.count_p_n_rule(best_rule)
+        #     for i in range(0, len(self.col_names)):
+        #         tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0,n0, best_rule)
+        #         if tmp_foil>best_foil:
+        #             best_l = copy.deepcopy(tmp_l)
+        #             best_foil = tmp_foil
+        #     if best_foil <= 0 or best_foil == -math.inf:
+        #         break
+        #     else:
+        #         best_rule = best_rule + best_l
+        #
+        # return best_rule
+
+        best_rule=list()
         best_l = None
         best_foil = -math.inf
-        rule = list()
         for i in range(0, len(self.col_val_tables_neg)):
             for j in range(0, len(self.col_val_tables_neg[i])):
                 p = np.count_nonzero(self.col_val_tables_pos[i][j] == True)
@@ -78,14 +105,16 @@ class NpArrayDataset(AbstractDataset):
                 if tmp_foil > best_foil:
                     best_l = (i, j)
                     best_foil = tmp_foil
-        rule.append(best_l)
+        if best_l is None:
+            return best_rule
+        best_rule.append(best_l)
         while True:
             best_foil = -math.inf
             best_l = None
             for i in range(0, len(self.col_val_tables_neg)):
                 for j in range(0, len(self.col_val_tables_neg[i])):
-                    p0, n0 = self.count_p_n_rule(rule)
-                    new_rule = copy.deepcopy(rule)
+                    p0, n0 = self.count_p_n_rule(best_rule)
+                    new_rule = copy.deepcopy(best_rule)
                     new_rule.append([i, j])
                     p, n = self.count_p_n_rule(new_rule)
                     tmp_foil = count_foil_grow(p0, n0, p, n)
@@ -93,10 +122,38 @@ class NpArrayDataset(AbstractDataset):
                         best_foil = tmp_foil
                         best_l = (i, j)
             if best_foil > 0:
-                rule.append(best_l)
+                best_rule.append(best_l)
             else:
                 break
-        return rule
+        return best_rule
+
+    def find_best_literal_from_variable(self, var, p0, n0, old_rule):
+        best_foil = -math.inf
+        p_to_n = list()
+        best_l = None
+        for i in range(0, len(self.col_val_tables_pos[var])):
+            new_literal = list()
+            new_literal.append([var, i])
+            new_rule = old_rule + new_literal
+            p, n = self.count_p_n_rule(new_rule)
+            if n == 0:
+                p_to_n.append([i, math.inf])
+            else:
+                p_to_n.append([i, p / n])
+        p_to_n = sorted(p_to_n, key=lambda x: x[1], reverse=True)
+        new_literal = list()
+        for i in range(0, len(p_to_n)):
+            new_literal.append([var, p_to_n[i][0]])
+            new_rule = old_rule + new_literal
+            p, n = self.count_p_n_rule(new_rule)
+            foil = count_foil_grow(p0, n0, p, n)
+            if foil > best_foil:
+                best_foil = foil
+                best_l = copy.deepcopy(new_literal)
+        if best_foil == -math.inf:
+            return None, best_foil
+        else:
+            return best_l, best_foil
 
     def make_rule(self, rule):
         rule = sorted(rule, key=lambda x: x[0])
@@ -110,7 +167,7 @@ class NpArrayDataset(AbstractDataset):
                 values = list()
             values.append(self.col_unique_values[i][j])
             prev_i = i
-        l = Literal(self.col_names[i], 'in', values)
+        l = Literal(self.col_names[i], 'in', sorted(values))
         new_rule.add_literal(l)
         return new_rule
 

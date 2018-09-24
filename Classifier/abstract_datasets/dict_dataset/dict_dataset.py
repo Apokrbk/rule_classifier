@@ -115,6 +115,11 @@ class DictDataset(AbstractDataset):
         return numeric_cols, char_cols
 
     def make_rule(self, rule):
+        for i in range(0, len(rule.literals)):
+            try:
+                rule.literals[i].values = sorted(rule.literals[i].values)
+            except TypeError:
+                pass
         return rule
 
     def unmake_rule(self, rule):
