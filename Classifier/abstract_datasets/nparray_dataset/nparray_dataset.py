@@ -94,20 +94,22 @@ class NpArrayDataset(AbstractDataset):
         #
         # return best_rule
 
-        best_rule=list()
-        best_l = None
-        best_foil = -math.inf
-        for i in range(0, len(self.col_val_tables_neg)):
-            for j in range(0, len(self.col_val_tables_neg[i])):
-                p = np.count_nonzero(self.col_val_tables_pos[i][j] == True)
-                n = np.count_nonzero(self.col_val_tables_neg[i][j] == True)
-                tmp_foil = count_foil_grow(0, 0, p, n)
-                if tmp_foil > best_foil:
-                    best_l = (i, j)
-                    best_foil = tmp_foil
-        if best_l is None:
-            return best_rule
-        best_rule.append(best_l)
+        # best_rule=list()
+        # best_l = None
+        # best_foil = -math.inf
+        # p0,n0 = self.count_p_n_rule(best_rule)
+        # for i in range(0, len(self.col_val_tables_neg)):
+        #     for j in range(0, len(self.col_val_tables_neg[i])):
+        #         p = np.count_nonzero(self.col_val_tables_pos[i][j] == True)
+        #         n = np.count_nonzero(self.col_val_tables_neg[i][j] == True)
+        #         tmp_foil = count_foil_grow(p0, n0, p, n)
+        #         if tmp_foil > best_foil:
+        #             best_l = (i, j)
+        #             best_foil = tmp_foil
+        # if best_l is None or best_foil <= 0:
+        #     return best_rule
+        # best_rule.append(best_l)
+        best_rule = list()
         while True:
             best_foil = -math.inf
             best_l = None
@@ -156,6 +158,8 @@ class NpArrayDataset(AbstractDataset):
             return best_l, best_foil
 
     def make_rule(self, rule):
+        if len(rule)==0:
+            return Rule()
         rule = sorted(rule, key=lambda x: x[0])
         prev_i = -1
         new_rule = Rule()
@@ -172,6 +176,8 @@ class NpArrayDataset(AbstractDataset):
         return new_rule
 
     def unmake_rule(self, rule):
+        if len(rule.literals)==0:
+            return list()
         new_rule = list()
         for i in range(0, len(rule.literals)):
             for j in range(0, len(self.col_names)):
@@ -238,12 +244,13 @@ class NpArrayDataset(AbstractDataset):
         return col_val_tables_neg_grow, col_val_tables_neg_prune, col_val_tables_pos_grow, col_val_tables_pos_prune
 
     def count_p_n_rule(self, rule):
-        p_rule, n_rule = self.make_rules_from_iters(rule)
-        return np.count_nonzero(p_rule == True), np.count_nonzero(n_rule == True)
+        if len(rule) == 0:
+            return len(self.col_val_tables_pos[0][0]), len(self.col_val_tables_neg[0][0])
+        else:
+            p_rule, n_rule = self.make_rules_from_iters(rule)
+            return np.count_nonzero(p_rule == True), np.count_nonzero(n_rule == True)
 
     def make_rules_from_iters(self, rule):
-        if rule is None:
-            return None
         rule = sorted(rule, key=lambda x: x[0])
         act_rule_p = None
         act_rule_n = None

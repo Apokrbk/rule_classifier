@@ -80,8 +80,8 @@ class TestNotebook(unittest.TestCase):
         rule = Rule()
         ds = NpArrayDataset(1, df)
         p, n = ds.count_p_n_rule(ds.unmake_rule(rule))
-        self.assertEqual(0, p)
-        self.assertEqual(0, n)
+        self.assertEqual(16, p)
+        self.assertEqual(16, n)
 
     # TEST DELETE COVERED
     def test_delete_covered_1(self):
@@ -236,7 +236,7 @@ class TestNotebook(unittest.TestCase):
         ds = NpArrayDataset(0, df)
         rule = ds.grow_rule()
         rule = ds.make_rule(rule)
-        self.assertEqual("a4 in ['f'] and a7 in ['c'] and a12 in ['k']", rule.to_string())
+        self.assertEqual("a5 in ['c', 'f', 'm', 'p', 's', 'y']", rule.to_string())
 
     # TEST MAKE RULE
     def test_make_rule_1(self):
@@ -249,6 +249,13 @@ class TestNotebook(unittest.TestCase):
         rule.append([5, 0])
         rule = ds.make_rule(rule)
         self.assertEqual("a1 in ['x'] and a3 in ['g'] and a6 in ['a', 'f']", rule.to_string())
+
+    def test_make_rule_2(self):
+        df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')
+        ds = NpArrayDataset(0, df)
+        rule = list()
+        rule = ds.make_rule(rule)
+        self.assertEqual("", rule.to_string())
 
     # TEST UNMAKE RULE
     def test_unmake_rule_1(self):
@@ -263,3 +270,10 @@ class TestNotebook(unittest.TestCase):
         rule.add_literal(l3)
         rule = ds.unmake_rule(rule)
         self.assertEqual("[[0, 0], [2, 3], [5, 0], [5, 1]]", str(rule))
+
+    def test_unmake_rule_2(self):
+        df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')
+        ds = NpArrayDataset(0, df)
+        rule = Rule()
+        rule = ds.unmake_rule(rule)
+        self.assertEqual("[]", str(rule))

@@ -77,6 +77,8 @@ class TestNotebook(unittest.TestCase):
         self.assertEqual(8, p)
         self.assertEqual(8, n)
 
+
+
     # TEST COUNT_P_N RULES
     def test_rule_count_p_n1(self):
         df = pd.read_csv('test_files/testfile_8.csv',
@@ -127,8 +129,8 @@ class TestNotebook(unittest.TestCase):
         rule = Rule()
         ds = DictDataset(1, df)
         p, n = ds.count_p_n_rule(rule)
-        self.assertEqual(0, p)
-        self.assertEqual(0, n)
+        self.assertEqual(16, p)
+        self.assertEqual(16, n)
 
     # TEST DELETE COVERED
     def test_delete_covered_1(self):
@@ -332,7 +334,7 @@ class TestNotebook(unittest.TestCase):
                          encoding='utf-8', delimiter=';')
         ds = DictDataset(0, df)
         rule = ds.grow_rule()
-        self.assertEqual("Sex in ['Female'] and Age < 22", rule.to_string())
+        self.assertEqual("Age < 8 and Sex in ['Female']", rule.to_string())
 
     def test_grow_rule_2(self):
         df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')

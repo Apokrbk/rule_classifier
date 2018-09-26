@@ -64,7 +64,7 @@ class DictDataset(AbstractDataset):
                 if foil > best_foil:
                     best_l = copy.deepcopy(l)
                     best_foil = foil
-            if best_foil == 0 or best_foil == -math.inf:
+            if best_foil <= 0 or best_foil == -math.inf:
                 break
             rule.add_literal(best_l)
             growset.delete_not_covered(rule)
@@ -129,7 +129,15 @@ class DictDataset(AbstractDataset):
         p = 0
         n = 0
         if len(rule.literals) == 0:
-            return 0, 0
+            try:
+                p = self.df[self.class_name].value_counts()[1]
+            except KeyError:
+                p = 0
+            try:
+                n = self.df[self.class_name].value_counts()[0]
+            except KeyError:
+                n = 0
+            return p,n
         for i in range(0, len(self.dict[self.class_name])):
             covered = True
             for j in range(0, len(rule.literals)):

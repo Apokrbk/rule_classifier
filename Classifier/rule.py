@@ -23,7 +23,7 @@ class Rule:
         n = 0
         last_col_name = growset.columns[len(growset.columns) - 1]
         if len(self.literals) == 0:
-            return 0, 0
+            return len(growset[last_col_name == 1]), len(growset[last_col_name == 0])
         for i in range(0, len(growset[last_col_name])):
             covered = True
             for j in range(0, len(self.literals)):
