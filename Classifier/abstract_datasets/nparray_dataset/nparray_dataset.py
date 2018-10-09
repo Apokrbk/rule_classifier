@@ -12,101 +12,94 @@ import pandas as pd
 
 
 class NpArrayDataset(AbstractDataset):
-    def __init__(self, prod=1, dataset=None, col_val_tables_pos=None, col_val_tables_neg=None, col_names=None,
-                 col_unique_values=None):
+    def __init__(self, prod=1, dataset=None, col_val_tables=None, col_names=None,
+                 col_unique_values=None, pos_map=None, neg_map=None):
         super().__init__(prod, dataset)
         if dataset is None:
             self.prod = prod
-            self.col_val_tables_pos = col_val_tables_pos
-            self.col_val_tables_neg = col_val_tables_neg
+            self.col_val_tables = col_val_tables
             self.col_names = col_names
             self.col_unique_values = col_unique_values
+            self.pos_map = pos_map
+            self.neg_map = neg_map
         else:
             self.prod = prod
-            self.col_val_tables_pos = list()
-            self.col_val_tables_neg = list()
+            self.col_val_tables = list()
             self.col_names = dataset.columns
             self.col_names = self.col_names[:-1]
             self.col_unique_values = list()
             self.create_tables_for_every_value(dataset)
-            neg, pos = self.divide_into_p_n(dataset)
+            self.pos_map = np.array(dataset[dataset.columns[-1]].map(lambda x: x == 1))
+            self.neg_map = np.logical_not(self.pos_map)
             for i in range(0, len(self.col_names)):
                 for j in range(0, len(self.col_unique_values[i])):
-                    self.add_table_for_every_value(i, j, neg, pos)
-
-    def divide_into_p_n(self, dataset):
-        pos = dataset.loc[dataset[dataset.columns[-1]] == 1]
-        neg = dataset.loc[dataset[dataset.columns[-1]] == 0]
-        return neg, pos
+                    self.add_table_for_every_value(i, j, dataset)
 
     def create_tables_for_every_value(self, dataset):
         for i in range(0, len(self.col_names)):
             self.col_unique_values.append(dataset[self.col_names[i]].unique())
-            self.col_val_tables_pos.append(list())
-            self.col_val_tables_neg.append(list())
+            self.col_val_tables.append(list())
 
-    def add_table_for_every_value(self, i, j, neg, pos):
+    def add_table_for_every_value(self, i, j, dataset):
         act_col = self.col_names[i]
         act_value = self.col_unique_values[i][j]
-        if len(pos) != 0:
-            self.col_val_tables_pos[i].append(np.array(pos[act_col].map(lambda x: x == act_value)))
-        if len(neg) != 0:
-            self.col_val_tables_neg[i].append(np.array(neg[act_col].map(lambda x: x == act_value)))
+        if len(dataset) != 0:
+            self.col_val_tables[i].append(np.array(dataset[act_col].map(lambda x: x == act_value)))
 
     def delete_covered(self, rule):
-        p_rule, n_rule = self.make_rules_from_iters(rule)
-        idx_p = np.where(p_rule)
-        idx_n = np.where(n_rule)
-        for i in range(0, len(self.col_val_tables_pos)):
-            for j in range(0, len(self.col_val_tables_pos[i])):
-                self.col_val_tables_pos[i][j] = np.delete(self.col_val_tables_pos[i][j], idx_p)
-                self.col_val_tables_neg[i][j] = np.delete(self.col_val_tables_neg[i][j], idx_n)
+        new_rule = self.make_rules_from_iters(rule)
+        idx = np.where(new_rule)
+        for i in range(0, len(self.col_val_tables)):
+            for j in range(0, len(self.col_val_tables[i])):
+                self.col_val_tables[i][j] = np.delete(self.col_val_tables[i][j], idx)
+        self.pos_map = np.delete(self.pos_map, idx)
+        self.neg_map = np.delete(self.neg_map, idx)
 
     def delete_not_covered(self, rule):
-        p_rule, n_rule = self.make_rules_from_iters(rule)
-        idx_p = np.where(p_rule)
-        idx_n = np.where(n_rule)
-        for i in range(0, len(self.col_val_tables_pos)):
-            for j in range(0, len(self.col_val_tables_pos[i])):
-                self.col_val_tables_pos[i][j] = np.take(self.col_val_tables_pos[i][j], idx_p)[0]
-                self.col_val_tables_neg[i][j] = np.take(self.col_val_tables_neg[i][j], idx_n)[0]
+        new_rule = self.make_rules_from_iters(rule)
+        idx = np.where(new_rule)
+        for i in range(0, len(self.col_val_tables)):
+            for j in range(0, len(self.col_val_tables[i])):
+                self.col_val_tables[i][j] = np.take(self.col_val_tables[i][j], idx)[0]
+        self.pos_map = np.take(self.pos_map, idx)[0]
+        self.neg_map = np.take(self.neg_map, idx)[0]
 
     def grow_rule(self):
-        best_rule = list()
-        while True:
-            best_l = None
-            best_foil = -math.inf
-            p0,n0 = self.count_p_n_rule(best_rule)
-            for i in range(0, len(self.col_names)):
-                tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0,n0, best_rule)
-                if tmp_foil>best_foil:
-                    best_l = copy.deepcopy(tmp_l)
-                    best_foil = tmp_foil
-            if best_foil <= 0:
-                break
-            else:
-                best_rule = best_rule + best_l
-        return best_rule
-
         # best_rule = list()
         # while True:
-        #     best_foil = -math.inf
         #     best_l = None
-        #     for i in range(0, len(self.col_val_tables_neg)):
-        #         for j in range(0, len(self.col_val_tables_neg[i])):
-        #             p0, n0 = self.count_p_n_rule(best_rule)
-        #             new_rule = copy.deepcopy(best_rule)
-        #             new_rule.append([i, j])
-        #             p, n = self.count_p_n_rule(new_rule)
-        #             tmp_foil = count_foil_grow(p0, n0, p, n)
-        #             if tmp_foil > best_foil:
-        #                 best_foil = tmp_foil
-        #                 best_l = (i, j)
-        #     if best_foil > 0:
-        #         best_rule.append(best_l)
-        #     else:
+        #     best_foil = -math.inf
+        #     p0,n0 = self.count_p_n_rule(best_rule)
+        #     for i in range(0, len(self.col_names)):
+        #         tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0,n0, best_rule)
+        #         if tmp_foil>best_foil:
+        #             best_l = copy.deepcopy(tmp_l)
+        #             best_foil = tmp_foil
+        #     if best_foil <= 0:
         #         break
+        #     else:
+        #         best_rule = best_rule + best_l
         # return best_rule
+
+        best_rule = list()
+        while True:
+            best_foil = -math.inf
+            best_l = None
+            for i in range(0, len(self.col_val_tables)):
+                for j in range(0, len(self.col_val_tables[i])):
+                    p0, n0 = self.count_p_n_rule(best_rule)
+                    new_rule = copy.deepcopy(best_rule)
+                    new_rule.append([i, j])
+                    p, n = self.count_p_n_rule(new_rule)
+                    tmp_foil = count_foil_grow(p0, n0, p, n)
+                    if tmp_foil > best_foil:
+                        best_foil = tmp_foil
+                        best_l = (i, j)
+            if best_foil > 0:
+                best_rule.append(best_l)
+            else:
+                break
+        return best_rule
 
     def find_best_literal_from_variable(self, var, p0, n0, old_rule):
         best_foil = -math.inf
@@ -134,7 +127,7 @@ class NpArrayDataset(AbstractDataset):
 
     def count_p_n_for_every_value(self, old_rule, var):
         p_to_n = list()
-        for i in range(0, len(self.col_val_tables_pos[var])):
+        for i in range(0, len(self.col_val_tables[var])):
             new_literal = list()
             new_literal.append([var, i])
             new_rule = old_rule + new_literal
@@ -198,94 +191,73 @@ class NpArrayDataset(AbstractDataset):
             return rule
 
     def split_into_growset_pruneset(self):
-        count_p_growset = round(len(self.col_val_tables_pos[0][0]) * 2 / 3)
-        count_n_growset = round(len(self.col_val_tables_neg[0][0]) * 2 / 3)
-        idx_n, idx_p = self.choose_idx_for_p_n(count_n_growset, count_p_growset)
-        col_val_tables_neg_grow, col_val_tables_neg_prune, col_val_tables_pos_grow, col_val_tables_pos_prune = self.split_by_idx(
-            idx_n, idx_p)
-        return NpArrayDataset(prod=self.prod, col_val_tables_pos=col_val_tables_pos_grow,
-                              col_val_tables_neg=col_val_tables_neg_grow,
-                              col_names=self.col_names, col_unique_values=self.col_unique_values), \
-               NpArrayDataset(prod=self.prod, col_val_tables_pos=col_val_tables_pos_prune,
-                              col_val_tables_neg=col_val_tables_neg_prune,
-                              col_names=self.col_names, col_unique_values=self.col_unique_values)
+        count_growset = round(len(self.col_val_tables[0][0]) * 2 / 3)
+        idx = self.choose_idx_for_p_n(count_growset)
+        col_val_tables_grow, col_val_tables_prune = self.split_by_idx(idx)
+        pos_map_grow = np.take(self.pos_map, idx)
+        neg_map_grow = np.take(self.neg_map, idx)
+        pos_map_prune = np.delete(self.pos_map, idx)
+        neg_map_prune = np.delete(self.neg_map, idx)
+        return NpArrayDataset(prod=self.prod, col_val_tables=col_val_tables_grow,
+                              col_names=self.col_names, col_unique_values=self.col_unique_values, pos_map=pos_map_grow,
+                              neg_map=neg_map_grow), \
+               NpArrayDataset(prod=self.prod, col_val_tables=col_val_tables_prune,
+                              col_names=self.col_names, col_unique_values=self.col_unique_values, pos_map=pos_map_prune,
+                              neg_map=neg_map_prune)
 
-    def choose_idx_for_p_n(self, count_n_growset, count_p_growset):
+    def choose_idx_for_p_n(self, count_growset):
         if self.prod == 1:
-            idx_p = random.sample(range(0, len(self.col_val_tables_pos[0][0])), count_p_growset)
-            idx_n = random.sample(range(0, len(self.col_val_tables_neg[0][0])), count_n_growset)
+            idx = random.sample(range(0, len(self.col_val_tables[0][0])), count_growset)
         else:
-            idx_p = range(0, count_p_growset)
-            idx_n = range(0, count_n_growset)
-        return idx_n, idx_p
+            idx = range(0, count_growset)
+        return idx
 
-    def split_by_idx(self, idx_n, idx_p):
-        col_val_tables_pos_grow = list()
-        col_val_tables_neg_grow = list()
-        col_val_tables_pos_prune = list()
-        col_val_tables_neg_prune = list()
+    def split_by_idx(self, idx):
+        col_val_tables_grow = list()
+        col_val_tables_prune = list()
         for i in range(0, len(self.col_names)):
-            col_val_tables_pos_grow.append(list())
-            col_val_tables_neg_grow.append(list())
-            col_val_tables_pos_prune.append(list())
-            col_val_tables_neg_prune.append(list())
+            col_val_tables_grow.append(list())
+            col_val_tables_prune.append(list())
             for j in range(0, len(self.col_unique_values[i])):
-                col_val_tables_pos_grow[i].append(np.take(self.col_val_tables_pos[i][j], idx_p))
-                col_val_tables_neg_grow[i].append(np.take(self.col_val_tables_neg[i][j], idx_n))
-                col_val_tables_pos_prune[i].append(np.delete(self.col_val_tables_pos[i][j], idx_p))
-                col_val_tables_neg_prune[i].append(np.delete(self.col_val_tables_neg[i][j], idx_n))
-        return col_val_tables_neg_grow, col_val_tables_neg_prune, col_val_tables_pos_grow, col_val_tables_pos_prune
+                col_val_tables_grow[i].append(np.take(self.col_val_tables[i][j], idx))
+                col_val_tables_prune[i].append(np.delete(self.col_val_tables[i][j], idx))
+        return col_val_tables_grow, col_val_tables_prune
 
     def count_p_n_rule(self, rule):
         if len(rule) == 0:
-            return len(self.col_val_tables_pos[0][0]), len(self.col_val_tables_neg[0][0])
+            return np.count_nonzero(self.pos_map == True), np.count_nonzero(self.neg_map == True)
         else:
-            p_rule, n_rule = self.make_rules_from_iters(rule)
+            new_rule = self.make_rules_from_iters(rule)
+            p_rule = np.logical_and(new_rule, self.pos_map)
+            n_rule = np.logical_and(new_rule, self.neg_map)
             return np.count_nonzero(p_rule == True), np.count_nonzero(n_rule == True)
 
     def make_rules_from_iters(self, rule):
         rule = sorted(rule, key=lambda x: x[0])
-        act_rule_p = None
-        act_rule_n = None
-        act_rule_n_tmp = None
-        act_rule_p_tmp = None
+        act_rule = None
+        act_rule_tmp = None
         prev_i = -1
         for i, j in rule:
             if prev_i != i:
-                if act_rule_p is None:
-                    act_rule_p = act_rule_p_tmp
-                    act_rule_n = act_rule_n_tmp
+                if act_rule is None:
+                    act_rule = act_rule_tmp
                 else:
-                    act_rule_p = np.logical_and(act_rule_p, act_rule_p_tmp)
-                    act_rule_n = np.logical_and(act_rule_n, act_rule_n_tmp)
-                act_rule_p_tmp = self.col_val_tables_pos[i][j]
-                act_rule_n_tmp = self.col_val_tables_neg[i][j]
+                    act_rule = np.logical_and(act_rule, act_rule_tmp)
+                act_rule_tmp = self.col_val_tables[i][j]
             else:
-                act_rule_p_tmp = np.logical_or(act_rule_p_tmp, self.col_val_tables_pos[i][j])
-                act_rule_n_tmp = np.logical_or(act_rule_n_tmp, self.col_val_tables_neg[i][j])
+                act_rule_tmp = np.logical_or(act_rule_tmp, self.col_val_tables[i][j])
             prev_i = i
-        if act_rule_p is None:
-            act_rule_p = act_rule_p_tmp
-            act_rule_n = act_rule_n_tmp
+        if act_rule is None:
+            act_rule = act_rule_tmp
         else:
-            act_rule_p = np.logical_and(act_rule_p, act_rule_p_tmp)
-            act_rule_n = np.logical_and(act_rule_n, act_rule_n_tmp)
-        return act_rule_p, act_rule_n
+            act_rule = np.logical_and(act_rule, act_rule_tmp)
+        return act_rule
 
     def is_any_pos_example(self):
-        if len(self.col_val_tables_pos[0]) == 0:
-            return False
-        return len(self.col_val_tables_pos[0][0]) > 0
+        return np.count_nonzero(self.pos_map == True) > 0
 
     def length(self):
-        if len(self.col_val_tables_pos[0]) == 0 and len(self.col_val_tables_neg[0]) == 0:
-            return 0
-        elif len(self.col_val_tables_pos[0]) == 0:
-            return len(self.col_val_tables_neg[0][0])
-        elif len(self.col_val_tables_neg[0]) == 0:
-            return len(self.col_val_tables_pos[0][0])
-        else:
-            return len(self.col_val_tables_pos[0][0]) + len(self.col_val_tables_neg[0][0])
+        return len(self.pos_map)
 
 
 def count_foil_grow(p0, n0, p, n):

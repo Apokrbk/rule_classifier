@@ -159,8 +159,8 @@ class TestNotebook(unittest.TestCase):
                          encoding='utf-8', delimiter=',')
         ds = NpArrayDataset(1, df)
         grow, prune = ds.split_into_growset_pruneset()
-        self.assertEqual(22, grow.length())
-        self.assertEqual(10, prune.length())
+        self.assertEqual(21, grow.length())
+        self.assertEqual(11, prune.length())
 
     # TEST LENGTH
     def test_length_dataset_1(self):
