@@ -211,6 +211,8 @@ class DictDataset(AbstractDataset):
             if foil > best_foil:
                 best_foil = foil
                 best_l = copy.deepcopy(literal)
+            else:
+                break
         if best_foil == -math.inf:
             return None, best_foil
         else:

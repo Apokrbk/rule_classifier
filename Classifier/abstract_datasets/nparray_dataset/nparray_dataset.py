@@ -9,7 +9,6 @@ from Classifier.abstract_datasets.abstract_dataset import AbstractDataset
 import numpy as np
 import pandas as pd
 
-pd.options.mode.chained_assignment = None
 
 
 class NpArrayDataset(AbstractDataset):
@@ -37,18 +36,12 @@ class NpArrayDataset(AbstractDataset):
             neg = dataset.loc[dataset[dataset.columns[-1]] == 0]
             for i in range(0, len(self.col_names)):
                 for j in range(0, len(self.col_unique_values[i])):
+                    act_col = self.col_names[i]
+                    act_value = self.col_unique_values[i][j]
                     if len(pos) != 0:
-                        pos.loc[(pos[self.col_names[i]] == self.col_unique_values[i][j]), "__temp__"] = True
-                        pos.loc[(pos[self.col_names[i]] != self.col_unique_values[i][j]), "__temp__"] = False
-                    else:
-                        pos["__temp__"] = 1
+                        self.col_val_tables_pos[i].append(np.array(pos[act_col].map(lambda x: x == act_value)))
                     if len(neg) != 0:
-                        neg.loc[(neg[self.col_names[i]] == self.col_unique_values[i][j]), "__temp__"] = True
-                        neg.loc[(neg[self.col_names[i]] != self.col_unique_values[i][j]), "__temp__"] = False
-                    else:
-                        neg["__temp__"] = 1
-                    self.col_val_tables_pos[i].append(np.array(pos['__temp__'].values))
-                    self.col_val_tables_neg[i].append(np.array(neg['__temp__'].values))
+                        self.col_val_tables_neg[i].append(np.array(neg[act_col].map(lambda x: x == act_value)))
 
     def delete_covered(self, rule):
         p_rule, n_rule = self.make_rules_from_iters(rule)
@@ -69,64 +62,20 @@ class NpArrayDataset(AbstractDataset):
                 self.col_val_tables_neg[i][j] = np.take(self.col_val_tables_neg[i][j], idx_n)[0]
 
     def grow_rule(self):
-        # best_rule = list()
-        # best_foil = -math.inf
-        # for i in range(0, len(self.col_names)):
-        #     tmp_l, tmp_foil = self.find_best_literal_from_variable(i, 0, 0, best_rule)
-        #     if tmp_foil > best_foil:
-        #         best_rule = copy.deepcopy(tmp_l)
-        #         best_foil = tmp_foil
-        # if best_foil == -math.inf:
-        #     return best_rule
-        # while True:
-        #     best_l = None
-        #     best_foil = -math.inf
-        #     p0,n0 = self.count_p_n_rule(best_rule)
-        #     for i in range(0, len(self.col_names)):
-        #         tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0,n0, best_rule)
-        #         if tmp_foil>best_foil:
-        #             best_l = copy.deepcopy(tmp_l)
-        #             best_foil = tmp_foil
-        #     if best_foil <= 0 or best_foil == -math.inf:
-        #         break
-        #     else:
-        #         best_rule = best_rule + best_l
-        #
-        # return best_rule
-
-        # best_rule=list()
-        # best_l = None
-        # best_foil = -math.inf
-        # p0,n0 = self.count_p_n_rule(best_rule)
-        # for i in range(0, len(self.col_val_tables_neg)):
-        #     for j in range(0, len(self.col_val_tables_neg[i])):
-        #         p = np.count_nonzero(self.col_val_tables_pos[i][j] == True)
-        #         n = np.count_nonzero(self.col_val_tables_neg[i][j] == True)
-        #         tmp_foil = count_foil_grow(p0, n0, p, n)
-        #         if tmp_foil > best_foil:
-        #             best_l = (i, j)
-        #             best_foil = tmp_foil
-        # if best_l is None or best_foil <= 0:
-        #     return best_rule
-        # best_rule.append(best_l)
         best_rule = list()
         while True:
-            best_foil = -math.inf
             best_l = None
-            for i in range(0, len(self.col_val_tables_neg)):
-                for j in range(0, len(self.col_val_tables_neg[i])):
-                    p0, n0 = self.count_p_n_rule(best_rule)
-                    new_rule = copy.deepcopy(best_rule)
-                    new_rule.append([i, j])
-                    p, n = self.count_p_n_rule(new_rule)
-                    tmp_foil = count_foil_grow(p0, n0, p, n)
-                    if tmp_foil > best_foil:
-                        best_foil = tmp_foil
-                        best_l = (i, j)
-            if best_foil > 0:
-                best_rule.append(best_l)
-            else:
+            best_foil = -math.inf
+            p0,n0 = self.count_p_n_rule(best_rule)
+            for i in range(0, len(self.col_names)):
+                tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0,n0, best_rule)
+                if tmp_foil>best_foil:
+                    best_l = copy.deepcopy(tmp_l)
+                    best_foil = tmp_foil
+            if best_foil <= 0:
                 break
+            else:
+                best_rule = best_rule + best_l
         return best_rule
 
     def find_best_literal_from_variable(self, var, p0, n0, old_rule):
@@ -152,13 +101,15 @@ class NpArrayDataset(AbstractDataset):
             if foil > best_foil:
                 best_foil = foil
                 best_l = copy.deepcopy(new_literal)
-        if best_foil == -math.inf:
-            return None, best_foil
+            else:
+                break
+        if best_foil <= 0:
+            return list(), -math.inf
         else:
             return best_l, best_foil
 
     def make_rule(self, rule):
-        if len(rule)==0:
+        if len(rule) == 0:
             return Rule()
         rule = sorted(rule, key=lambda x: x[0])
         prev_i = -1
@@ -176,7 +127,7 @@ class NpArrayDataset(AbstractDataset):
         return new_rule
 
     def unmake_rule(self, rule):
-        if len(rule.literals)==0:
+        if len(rule.literals) == 0:
             return list()
         new_rule = list()
         for i in range(0, len(rule.literals)):

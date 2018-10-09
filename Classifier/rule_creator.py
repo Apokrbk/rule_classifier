@@ -49,6 +49,7 @@ def cubes_for_numeric_data(df, num_of_intervals):
     numeric_cols = df._get_numeric_data().columns
     numeric_cols = numeric_cols[:-1]
     for i in range(0, len(numeric_cols)):
+        # df[numeric_cols[i]] = pd.cut(df[numeric_cols[i]], num_of_intervals, duplicates='drop').astype(str)
         df[numeric_cols[i]] = pd.qcut(df[numeric_cols[i]], num_of_intervals, duplicates='drop').astype(str)
     return df
 
@@ -70,6 +71,7 @@ def test_all(df_all, prod, iters, dataset_type):
         c_df = copy.deepcopy(df)
         start = time.time()
         dataset = dataset_type(prod, df_train)
+
         rules = create_rules(dataset)
         end = time.time()
         for i in range(0, len(rules)):
@@ -79,6 +81,9 @@ def test_all(df_all, prod, iters, dataset_type):
             p_all += p
             n_all += n
             c_df = delete_covered(c_df, rules[i])
+        if len(rules)==0:
+            p_all += p_ex/iters
+            n_all += n_ex/iters
         time_all += (end - start)
         rules_all += len(rules)
     tp = p_all
@@ -123,14 +128,60 @@ def delete_covered(growset, rule):
 #                  encoding='utf-8', delimiter=';')
 # test_all(df, 1, 10, DictDataset)
 
+# print("MUSHROOM")
+# df = pd.read_csv('data_files/mushroom.csv',
+#                  encoding='utf-8', delimiter=';')
+# test_all(df, 1, 10, NpArrayDataset)
 # print("HYPOTHYROID")
 # df = pd.read_csv('data_files/hypothyroid.csv',
 #                  encoding='utf-8', delimiter=';')
-# # df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 1, DictDataset)
-
-print("PHONEME")
-df = pd.read_csv('data_files/phoneme.csv',
-                 encoding='utf-8', delimiter=';')
 # df = cubes_for_numeric_data(df,10)
-test_all(df, 1, 1, DictDataset)
+# test_all(df, 1, 10, NpArrayDataset)
+#
+# print("HYPOTHYROID")
+# df = pd.read_csv('data_files/hypothyroid.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,30)
+# test_all(df, 1, 10, NpArrayDataset)
+#
+# print("HYPOTHYROID")
+# df = pd.read_csv('data_files/hypothyroid.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,50)
+# test_all(df, 1, 10, NpArrayDataset)
+
+# print("HYPOTHYROID")
+# df = pd.read_csv('data_files/hypothyroid.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,30)
+# test_all(df, 1, 10, NpArrayDataset)
+#
+# print("HYPOTHYROID")
+# df = pd.read_csv('data_files/hypothyroid.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,50)
+# test_all(df, 1, 10, NpArrayDataset)
+
+# print("PHONEME")
+# df = pd.read_csv('data_files/phoneme.csv',
+#                  encoding='utf-8', delimiter=';')
+# # df = cubes_for_numeric_data(df,10)
+# test_all(df, 1, 3, DictDataset)
+#
+# print("PHONEME")
+# df = pd.read_csv('data_files/phoneme.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,30)
+# test_all(df, 1, 10, NpArrayDataset)
+
+# print("PHONEME")
+# df = pd.read_csv('data_files/phoneme.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,30)
+# test_all(df, 1, 10, NpArrayDataset)
+#
+# print("PHONEME")
+# df = pd.read_csv('data_files/phoneme.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,50)
+# test_all(df, 1, 10, NpArrayDataset)
