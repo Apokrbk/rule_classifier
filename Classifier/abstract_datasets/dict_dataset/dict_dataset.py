@@ -129,15 +129,10 @@ class DictDataset(AbstractDataset):
         p = 0
         n = 0
         if len(rule.literals) == 0:
-            try:
-                p = self.df[self.class_name].value_counts()[1]
-            except KeyError:
-                p = 0
-            try:
-                n = self.df[self.class_name].value_counts()[0]
-            except KeyError:
-                n = 0
-            return p,n
+            return self.empty_rule_count_p_n()
+        return self.not_empty_rule_count_p_n(n, p, rule)
+
+    def not_empty_rule_count_p_n(self, n, p, rule):
         for i in range(0, len(self.dict[self.class_name])):
             covered = True
             for j in range(0, len(rule.literals)):
@@ -149,6 +144,17 @@ class DictDataset(AbstractDataset):
                     p += 1
                 else:
                     n += 1
+        return p, n
+
+    def empty_rule_count_p_n(self):
+        try:
+            p = self.df[self.class_name].value_counts()[1]
+        except KeyError:
+            p = 0
+        try:
+            n = self.df[self.class_name].value_counts()[0]
+        except KeyError:
+            n = 0
         return p, n
 
     def count_p_n_literal(self, literal):
@@ -174,35 +180,32 @@ class DictDataset(AbstractDataset):
         best_foil = -math.inf
         best_l = None
         for i in range(0, len(unique_values)):
-            literal = Literal(atr_col_name, '<', unique_values[i])
-            p, n = self.count_p_n_literal(literal)
-            tmp_foil = count_foil_grow(p0, n0, p, n)
-            if tmp_foil > best_foil:
-                best_foil = tmp_foil
-                best_l = copy.deepcopy(literal)
-            literal = Literal(atr_col_name, '>', unique_values[i])
-            p, n = self.count_p_n_literal(literal)
-            tmp_foil = count_foil_grow(p0, n0, p, n)
-            if tmp_foil > best_foil:
-                best_foil = tmp_foil
-                best_l = copy.deepcopy(literal)
+            best_foil, best_l = self.check_literal(atr_col_name, best_foil, best_l, i, n0, p0, unique_values, '<')
+            best_foil, best_l = self.check_literal(atr_col_name, best_foil, best_l, i, n0, p0, unique_values, '>')
         return best_l, best_foil
+
+    def check_literal(self, atr_col_name, best_foil, best_l, i, n0, p0, unique_values, op):
+        literal = Literal(atr_col_name, op, unique_values[i])
+        p, n = self.count_p_n_literal(literal)
+        tmp_foil = count_foil_grow(p0, n0, p, n)
+        if tmp_foil > best_foil:
+            best_foil = tmp_foil
+            best_l = copy.deepcopy(literal)
+        return best_foil, best_l
 
     def find_best_char_literal(self, p0, n0, unique_values, atr_col_name):
         best_foil = -math.inf
-        p_to_n = list()
         best_l = None
-        for i in range(0, len(unique_values)):
-            literal = Literal(atr_col_name, 'in', unique_values[i])
-            p, n = self.count_p_n_literal(literal)
-            if n == 0:
-                p_to_n.append(math.inf)
-            else:
-                p_to_n.append(p / n)
-        df = pd.DataFrame({'value': unique_values, 'p_to_n': p_to_n})
-        df = df.sort_values(by='p_to_n', ascending=False)
-        df.index = range(len(df))
+        df = self.count_p_n_for_every_value_and_sort(atr_col_name, unique_values)
         values_to_literal = list()
+        best_foil, best_l = self.choose_best_literal(atr_col_name, best_foil, best_l, df, n0, p0, unique_values,
+                                                     values_to_literal)
+        if best_foil == -math.inf:
+            return None, best_foil
+        else:
+            return best_l, best_foil
+
+    def choose_best_literal(self, atr_col_name, best_foil, best_l, df, n0, p0, unique_values, values_to_literal):
         for i in range(0, len(unique_values)):
             values_to_literal.append(df.at[i, 'value'])
             literal = Literal(atr_col_name, 'in', values_to_literal)
@@ -213,10 +216,21 @@ class DictDataset(AbstractDataset):
                 best_l = copy.deepcopy(literal)
             else:
                 break
-        if best_foil == -math.inf:
-            return None, best_foil
-        else:
-            return best_l, best_foil
+        return best_foil, best_l
+
+    def count_p_n_for_every_value_and_sort(self, atr_col_name, unique_values):
+        p_to_n = list()
+        for i in range(0, len(unique_values)):
+            literal = Literal(atr_col_name, 'in', unique_values[i])
+            p, n = self.count_p_n_literal(literal)
+            if n == 0:
+                p_to_n.append(math.inf)
+            else:
+                p_to_n.append(p / n)
+        df = pd.DataFrame({'value': unique_values, 'p_to_n': p_to_n})
+        df = df.sort_values(by='p_to_n', ascending=False)
+        df.index = range(len(df))
+        return df
 
     def length(self):
         return len(self.df)

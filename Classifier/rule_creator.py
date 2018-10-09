@@ -128,10 +128,10 @@ def delete_covered(growset, rule):
 #                  encoding='utf-8', delimiter=';')
 # test_all(df, 1, 10, DictDataset)
 
-# print("MUSHROOM")
-# df = pd.read_csv('data_files/mushroom.csv',
-#                  encoding='utf-8', delimiter=';')
-# test_all(df, 1, 10, NpArrayDataset)
+print("MUSHROOM")
+df = pd.read_csv('data_files/mushroom.csv',
+                 encoding='utf-8', delimiter=';')
+test_all(df, 1, 10, NpArrayDataset)
 # print("HYPOTHYROID")
 # df = pd.read_csv('data_files/hypothyroid.csv',
 #                  encoding='utf-8', delimiter=';')
@@ -147,7 +147,7 @@ def delete_covered(growset, rule):
 # print("HYPOTHYROID")
 # df = pd.read_csv('data_files/hypothyroid.csv',
 #                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,50)
+# df = cubes_for_numeric_data(df,10)
 # test_all(df, 1, 10, NpArrayDataset)
 
 # print("HYPOTHYROID")

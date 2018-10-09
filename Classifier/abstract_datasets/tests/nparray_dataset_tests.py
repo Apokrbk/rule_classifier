@@ -229,7 +229,7 @@ class TestNotebook(unittest.TestCase):
         ds = NpArrayDataset(0, df)
         rule = ds.grow_rule()
         rule = ds.make_rule(rule)
-        self.assertEqual("Sex in ['Female'] and Age in [4, 5, 6, 7, 8, 9]", rule.to_string())
+        self.assertEqual("Sex in ['Female'] and Age in [4, 5, 6, 7, 35, 37, 45]", rule.to_string())
 
     def test_grow_rule_2(self):
         df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')

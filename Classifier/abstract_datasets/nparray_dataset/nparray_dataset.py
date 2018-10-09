@@ -28,20 +28,30 @@ class NpArrayDataset(AbstractDataset):
             self.col_names = dataset.columns
             self.col_names = self.col_names[:-1]
             self.col_unique_values = list()
-            for i in range(0, len(self.col_names)):
-                self.col_unique_values.append(dataset[self.col_names[i]].unique())
-                self.col_val_tables_pos.append(list())
-                self.col_val_tables_neg.append(list())
-            pos = dataset.loc[dataset[dataset.columns[-1]] == 1]
-            neg = dataset.loc[dataset[dataset.columns[-1]] == 0]
+            self.create_tables_for_every_value(dataset)
+            neg, pos = self.divide_into_p_n(dataset)
             for i in range(0, len(self.col_names)):
                 for j in range(0, len(self.col_unique_values[i])):
-                    act_col = self.col_names[i]
-                    act_value = self.col_unique_values[i][j]
-                    if len(pos) != 0:
-                        self.col_val_tables_pos[i].append(np.array(pos[act_col].map(lambda x: x == act_value)))
-                    if len(neg) != 0:
-                        self.col_val_tables_neg[i].append(np.array(neg[act_col].map(lambda x: x == act_value)))
+                    self.add_table_for_every_value(i, j, neg, pos)
+
+    def divide_into_p_n(self, dataset):
+        pos = dataset.loc[dataset[dataset.columns[-1]] == 1]
+        neg = dataset.loc[dataset[dataset.columns[-1]] == 0]
+        return neg, pos
+
+    def create_tables_for_every_value(self, dataset):
+        for i in range(0, len(self.col_names)):
+            self.col_unique_values.append(dataset[self.col_names[i]].unique())
+            self.col_val_tables_pos.append(list())
+            self.col_val_tables_neg.append(list())
+
+    def add_table_for_every_value(self, i, j, neg, pos):
+        act_col = self.col_names[i]
+        act_value = self.col_unique_values[i][j]
+        if len(pos) != 0:
+            self.col_val_tables_pos[i].append(np.array(pos[act_col].map(lambda x: x == act_value)))
+        if len(neg) != 0:
+            self.col_val_tables_neg[i].append(np.array(neg[act_col].map(lambda x: x == act_value)))
 
     def delete_covered(self, rule):
         p_rule, n_rule = self.make_rules_from_iters(rule)
@@ -78,21 +88,38 @@ class NpArrayDataset(AbstractDataset):
                 best_rule = best_rule + best_l
         return best_rule
 
+        # best_rule = list()
+        # while True:
+        #     best_foil = -math.inf
+        #     best_l = None
+        #     for i in range(0, len(self.col_val_tables_neg)):
+        #         for j in range(0, len(self.col_val_tables_neg[i])):
+        #             p0, n0 = self.count_p_n_rule(best_rule)
+        #             new_rule = copy.deepcopy(best_rule)
+        #             new_rule.append([i, j])
+        #             p, n = self.count_p_n_rule(new_rule)
+        #             tmp_foil = count_foil_grow(p0, n0, p, n)
+        #             if tmp_foil > best_foil:
+        #                 best_foil = tmp_foil
+        #                 best_l = (i, j)
+        #     if best_foil > 0:
+        #         best_rule.append(best_l)
+        #     else:
+        #         break
+        # return best_rule
+
     def find_best_literal_from_variable(self, var, p0, n0, old_rule):
         best_foil = -math.inf
-        p_to_n = list()
         best_l = None
-        for i in range(0, len(self.col_val_tables_pos[var])):
-            new_literal = list()
-            new_literal.append([var, i])
-            new_rule = old_rule + new_literal
-            p, n = self.count_p_n_rule(new_rule)
-            if n == 0:
-                p_to_n.append([i, math.inf])
-            else:
-                p_to_n.append([i, p / n])
-        p_to_n = sorted(p_to_n, key=lambda x: x[1], reverse=True)
+        p_to_n = self.count_p_n_for_every_value(old_rule, var)
         new_literal = list()
+        best_foil, best_l = self.choose_best_literal(best_foil, best_l, n0, new_literal, old_rule, p0, p_to_n, var)
+        if best_foil <= 0:
+            return list(), -math.inf
+        else:
+            return best_l, best_foil
+
+    def choose_best_literal(self, best_foil, best_l, n0, new_literal, old_rule, p0, p_to_n, var):
         for i in range(0, len(p_to_n)):
             new_literal.append([var, p_to_n[i][0]])
             new_rule = old_rule + new_literal
@@ -103,10 +130,21 @@ class NpArrayDataset(AbstractDataset):
                 best_l = copy.deepcopy(new_literal)
             else:
                 break
-        if best_foil <= 0:
-            return list(), -math.inf
-        else:
-            return best_l, best_foil
+        return best_foil, best_l
+
+    def count_p_n_for_every_value(self, old_rule, var):
+        p_to_n = list()
+        for i in range(0, len(self.col_val_tables_pos[var])):
+            new_literal = list()
+            new_literal.append([var, i])
+            new_rule = old_rule + new_literal
+            p, n = self.count_p_n_rule(new_rule)
+            if n == 0:
+                p_to_n.append([i, math.inf])
+            else:
+                p_to_n.append([i, p / n])
+        p_to_n = sorted(p_to_n, key=lambda x: x[1], reverse=True)
+        return p_to_n
 
     def make_rule(self, rule):
         if len(rule) == 0:
@@ -162,12 +200,7 @@ class NpArrayDataset(AbstractDataset):
     def split_into_growset_pruneset(self):
         count_p_growset = round(len(self.col_val_tables_pos[0][0]) * 2 / 3)
         count_n_growset = round(len(self.col_val_tables_neg[0][0]) * 2 / 3)
-        if self.prod == 1:
-            idx_p = random.sample(range(0, len(self.col_val_tables_pos[0][0])), count_p_growset)
-            idx_n = random.sample(range(0, len(self.col_val_tables_neg[0][0])), count_n_growset)
-        else:
-            idx_p = range(0, count_p_growset)
-            idx_n = range(0, count_n_growset)
+        idx_n, idx_p = self.choose_idx_for_p_n(count_n_growset, count_p_growset)
         col_val_tables_neg_grow, col_val_tables_neg_prune, col_val_tables_pos_grow, col_val_tables_pos_prune = self.split_by_idx(
             idx_n, idx_p)
         return NpArrayDataset(prod=self.prod, col_val_tables_pos=col_val_tables_pos_grow,
@@ -176,6 +209,15 @@ class NpArrayDataset(AbstractDataset):
                NpArrayDataset(prod=self.prod, col_val_tables_pos=col_val_tables_pos_prune,
                               col_val_tables_neg=col_val_tables_neg_prune,
                               col_names=self.col_names, col_unique_values=self.col_unique_values)
+
+    def choose_idx_for_p_n(self, count_n_growset, count_p_growset):
+        if self.prod == 1:
+            idx_p = random.sample(range(0, len(self.col_val_tables_pos[0][0])), count_p_growset)
+            idx_n = random.sample(range(0, len(self.col_val_tables_neg[0][0])), count_n_growset)
+        else:
+            idx_p = range(0, count_p_growset)
+            idx_n = range(0, count_n_growset)
+        return idx_n, idx_p
 
     def split_by_idx(self, idx_n, idx_p):
         col_val_tables_pos_grow = list()
