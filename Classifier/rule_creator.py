@@ -28,7 +28,7 @@ def create_rules(trainset):
             trainset.delete_covered(new_rule)
             new_rule = trainset.make_rule(new_rule)
             rules.append(new_rule)
-            # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
+            print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
         if max_iter >= 5 or trainset.length() < 60 or not trainset.is_any_pos_example():
             break
     return rules
@@ -122,18 +122,18 @@ def delete_covered(growset, rule):
 
 
 
+# print("MUSHROOM")
+# df = pd.read_csv('data_files/mushroom.csv',
+#                  encoding='utf-8', delimiter=';')
+# test_all(df, 1, 1, DictDataset)
+#
+# print("MUSHROOM")
+# df = pd.read_csv('data_files/mushroom.csv',
+#                  encoding='utf-8', delimiter=';')
+# test_all(df, 1, 1, NpArrayDataset)
+#
 print("MUSHROOM")
-df = pd.read_csv('data_files/mushroom.csv',
-                 encoding='utf-8', delimiter=';')
-test_all(df, 1, 1, DictDataset)
-
-print("MUSHROOM")
-df = pd.read_csv('data_files/mushroom.csv',
-                 encoding='utf-8', delimiter=';')
-test_all(df, 1, 1, NpArrayDataset)
-
-print("MUSHROOM")
-df = pd.read_csv('data_files/mushroom.csv',
+df = pd.read_csv('data_files/dota2Train.csv',
                  encoding='utf-8', delimiter=';')
 test_all(df, 1, 1, BitmapDataset)
 # print("HYPOTHYROID")

@@ -1,8 +1,7 @@
-import math
 import pandas as pd
 import unittest
 
-from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import count_foil_grow, BitmapDataset
+from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import  BitmapDataset
 from Classifier.literal import Literal
 from Classifier.rule import Rule
 
