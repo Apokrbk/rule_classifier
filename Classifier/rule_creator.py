@@ -49,7 +49,6 @@ def cubes_for_numeric_data(df, num_of_intervals):
     numeric_cols = df._get_numeric_data().columns
     numeric_cols = numeric_cols[:-1]
     for i in range(0, len(numeric_cols)):
-        # df[numeric_cols[i]] = pd.cut(df[numeric_cols[i]], num_of_intervals, duplicates='drop').astype(str)
         df[numeric_cols[i]] = pd.qcut(df[numeric_cols[i]], num_of_intervals, duplicates='drop').astype(str)
     return df
 
@@ -123,15 +122,20 @@ def delete_covered(growset, rule):
 
 
 
-# print("MUSHROOM")
-# df = pd.read_csv('data_files/mushroom.csv',
-#                  encoding='utf-8', delimiter=';')
-# test_all(df, 1, 10, DictDataset)
+print("MUSHROOM")
+df = pd.read_csv('data_files/mushroom.csv',
+                 encoding='utf-8', delimiter=';')
+test_all(df, 1, 1, DictDataset)
 
-# print("MUSHROOM")
-# df = pd.read_csv('data_files/mushroom.csv',
-#                  encoding='utf-8', delimiter=';')
-# test_all(df, 1, 10, NpArrayDataset)
+print("MUSHROOM")
+df = pd.read_csv('data_files/mushroom.csv',
+                 encoding='utf-8', delimiter=';')
+test_all(df, 1, 1, NpArrayDataset)
+
+print("MUSHROOM")
+df = pd.read_csv('data_files/mushroom.csv',
+                 encoding='utf-8', delimiter=';')
+test_all(df, 1, 1, BitmapDataset)
 # print("HYPOTHYROID")
 # df = pd.read_csv('data_files/hypothyroid.csv',
 #                  encoding='utf-8', delimiter=';')
@@ -150,11 +154,11 @@ def delete_covered(growset, rule):
 # df = cubes_for_numeric_data(df,10)
 # test_all(df, 1, 10, NpArrayDataset)
 
-print("HYPOTHYROID")
-df = pd.read_csv('data_files/hypothyroid.csv',
-                 encoding='utf-8', delimiter=';')
-df = cubes_for_numeric_data(df,10)
-test_all(df, 1, 10, BitmapDataset)
+# print("HYPOTHYROID")
+# df = pd.read_csv('data_files/hypothyroid.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df,10)
+# test_all(df, 1, 10, BitmapDataset)
 #
 # print("HYPOTHYROID")
 # df = pd.read_csv('data_files/hypothyroid.csv',
@@ -178,7 +182,7 @@ test_all(df, 1, 10, BitmapDataset)
 # df = pd.read_csv('data_files/phoneme.csv',
 #                  encoding='utf-8', delimiter=';')
 # df = cubes_for_numeric_data(df,30)
-# test_all(df, 1, 10, NpArrayDataset)
+# test_all(df, 1, 1, BitmapDataset)
 #
 # print("PHONEME")
 # df = pd.read_csv('data_files/phoneme.csv',

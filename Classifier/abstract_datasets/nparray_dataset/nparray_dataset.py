@@ -5,7 +5,7 @@ from Classifier.rule import Rule
 import copy
 import math
 import random
-from Classifier.abstract_datasets.abstract_dataset import AbstractDataset
+from Classifier.abstract_datasets.abstract_dataset import AbstractDataset, count_foil_grow
 import numpy as np
 import pandas as pd
 
@@ -65,41 +65,41 @@ class NpArrayDataset(AbstractDataset):
         self.neg_map = np.take(self.neg_map, idx)[0]
 
     def grow_rule(self):
-        # best_rule = list()
-        # while True:
-        #     best_l = None
-        #     best_foil = -math.inf
-        #     p0,n0 = self.count_p_n_rule(best_rule)
-        #     for i in range(0, len(self.col_names)):
-        #         tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0,n0, best_rule)
-        #         if tmp_foil>best_foil:
-        #             best_l = copy.deepcopy(tmp_l)
-        #             best_foil = tmp_foil
-        #     if best_foil <= 0:
-        #         break
-        #     else:
-        #         best_rule = best_rule + best_l
-        # return best_rule
-
         best_rule = list()
         while True:
-            best_foil = -math.inf
             best_l = None
-            for i in range(0, len(self.col_val_tables)):
-                for j in range(0, len(self.col_val_tables[i])):
-                    p0, n0 = self.count_p_n_rule(best_rule)
-                    new_rule = copy.deepcopy(best_rule)
-                    new_rule.append([i, j])
-                    p, n = self.count_p_n_rule(new_rule)
-                    tmp_foil = count_foil_grow(p0, n0, p, n)
-                    if tmp_foil > best_foil:
-                        best_foil = tmp_foil
-                        best_l = (i, j)
-            if best_foil > 0:
-                best_rule.append(best_l)
-            else:
+            best_foil = -math.inf
+            p0,n0 = self.count_p_n_rule(best_rule)
+            for i in range(0, len(self.col_names)):
+                tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0,n0, best_rule)
+                if tmp_foil>best_foil:
+                    best_l = copy.deepcopy(tmp_l)
+                    best_foil = tmp_foil
+            if best_foil <= 0:
                 break
+            else:
+                best_rule = best_rule + best_l
         return best_rule
+
+        # best_rule = list()
+        # while True:
+        #     best_foil = -math.inf
+        #     best_l = None
+        #     for i in range(0, len(self.col_val_tables)):
+        #         for j in range(0, len(self.col_val_tables[i])):
+        #             p0, n0 = self.count_p_n_rule(best_rule)
+        #             new_rule = copy.deepcopy(best_rule)
+        #             new_rule.append([i, j])
+        #             p, n = self.count_p_n_rule(new_rule)
+        #             tmp_foil = count_foil_grow(p0, n0, p, n)
+        #             if tmp_foil > best_foil:
+        #                 best_foil = tmp_foil
+        #                 best_l = (i, j)
+        #     if best_foil > 0:
+        #         best_rule.append(best_l)
+        #     else:
+        #         break
+        # return best_rule
 
     def find_best_literal_from_variable(self, var, p0, n0, old_rule):
         best_foil = -math.inf
@@ -172,6 +172,8 @@ class NpArrayDataset(AbstractDataset):
         return new_rule
 
     def prune_rule(self, rule):
+        if len(rule) == 0:
+            return None
         len_rule = len(rule) - 1
         for i in range(len_rule, -1, -1):
             pruned_rule = copy.deepcopy(rule)
@@ -192,7 +194,7 @@ class NpArrayDataset(AbstractDataset):
 
     def split_into_growset_pruneset(self):
         count_growset = round(len(self.col_val_tables[0][0]) * 2 / 3)
-        idx = self.choose_idx_for_p_n(count_growset)
+        idx = self.choose_idx_for_split(count_growset)
         col_val_tables_grow, col_val_tables_prune = self.split_by_idx(idx)
         pos_map_grow = np.take(self.pos_map, idx)
         neg_map_grow = np.take(self.neg_map, idx)
@@ -205,7 +207,7 @@ class NpArrayDataset(AbstractDataset):
                               col_names=self.col_names, col_unique_values=self.col_unique_values, pos_map=pos_map_prune,
                               neg_map=neg_map_prune)
 
-    def choose_idx_for_p_n(self, count_growset):
+    def choose_idx_for_split(self, count_growset):
         if self.prod == 1:
             idx = random.sample(range(0, len(self.col_val_tables[0][0])), count_growset)
         else:
@@ -260,20 +262,3 @@ class NpArrayDataset(AbstractDataset):
         return len(self.pos_map)
 
 
-def count_foil_grow(p0, n0, p, n):
-    if p0 == 0 and n0 == 0:
-        if p == 0:
-            return -math.inf
-        try:
-            return p * (p / (p + n))
-        except (ZeroDivisionError, ValueError):
-            return -math.inf
-    else:
-        if p == 0:
-            return -math.inf
-        if n == 0 and n0 == 0:
-            return p - p0
-        try:
-            return p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2))
-        except (ZeroDivisionError, ValueError):
-            return -math.inf
