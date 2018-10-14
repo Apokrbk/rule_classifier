@@ -28,7 +28,7 @@ def create_rules(trainset):
             trainset.delete_covered(new_rule)
             new_rule = trainset.make_rule(new_rule)
             rules.append(new_rule)
-            print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
+            # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
         if max_iter >= 5 or trainset.length() < 60 or not trainset.is_any_pos_example():
             break
     return rules
@@ -70,7 +70,6 @@ def test_all(df_all, prod, iters, dataset_type):
         c_df = copy.deepcopy(df)
         start = time.time()
         dataset = dataset_type(prod, df_train)
-
         rules = create_rules(dataset)
         end = time.time()
         for i in range(0, len(rules)):
@@ -133,9 +132,10 @@ def delete_covered(growset, rule):
 # test_all(df, 1, 1, NpArrayDataset)
 #
 print("MUSHROOM")
-df = pd.read_csv('data_files/dota2Train.csv',
+df = pd.read_csv('data_files/bank-full.csv',
                  encoding='utf-8', delimiter=';')
-test_all(df, 1, 1, BitmapDataset)
+df = cubes_for_numeric_data(df,10)
+test_all(df, 1, 1, NpArrayDataset)
 # print("HYPOTHYROID")
 # df = pd.read_csv('data_files/hypothyroid.csv',
 #                  encoding='utf-8', delimiter=';')

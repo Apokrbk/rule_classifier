@@ -205,11 +205,9 @@ class BitmapDataset(AbstractDataset):
     def split_into_growset_pruneset(self):
         count_growset = round(self.length() * 2 / 3)
         idx = self.choose_idx_for_split(count_growset)
-        ids = list(self.all_id)
         ids_grow = BitMap()
-        for i in range(0, len(ids)):
-            if i in idx:
-                ids_grow.add(ids[i])
+        for i in range(0, len(idx)):
+            ids_grow.add(self.all_id[idx[i]])
         col_val_tables_grow, col_val_tables_prune = self.split_by_idx(ids_grow)
         pos_map_grow = self.pos_map & ids_grow
         neg_map_grow = self.neg_map & ids_grow
