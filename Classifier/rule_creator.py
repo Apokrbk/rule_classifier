@@ -12,26 +12,59 @@ from Classifier.abstract_datasets.dict_dataset.dict_dataset import DictDataset
 from Classifier.abstract_datasets.nparray_dataset.nparray_dataset import NpArrayDataset
 
 
-def create_rules(trainset):
-    rules = list()
-    max_iter = 0
-    while True:
-        growset, pruneset = trainset.split_into_growset_pruneset()
-        start = time.time()
-        new_rule = growset.grow_rule()
-        new_rule = pruneset.prune_rule(new_rule)
-        end = time.time()
-        if new_rule is None:
-            # print("BAD RULE " + "Time: " + str(end - start) + "s")
-            max_iter += 1
-        else:
-            trainset.delete_covered(new_rule)
-            new_rule = trainset.make_rule(new_rule)
-            rules.append(new_rule)
-            # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
-        if max_iter >= 5 or trainset.length() < 60 or not trainset.is_any_pos_example():
-            break
-    return rules
+class RuleCreator:
+
+    def __init__(self, dataset_type, df, prod):
+        self.prod = prod
+        self.rules = self.train(dataset_type(prod, df))
+
+    def train(self, trainset):
+        rules = list()
+        max_iter = 0
+        while True:
+            growset, pruneset = trainset.split_into_growset_pruneset()
+            start = time.time()
+            new_rule = growset.grow_rule()
+            new_rule = pruneset.prune_rule(new_rule)
+            end = time.time()
+            if new_rule is None:
+                # print("BAD RULE " + "Time: " + str(end - start) + "s")
+                max_iter += 1
+            else:
+                trainset.delete_covered(new_rule)
+                new_rule = trainset.make_rule(new_rule)
+                rules.append(new_rule)
+                # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
+            if max_iter >= 5 or trainset.length() < 60 or not trainset.is_any_pos_example():
+                break
+        return rules
+
+    def predict(self, dataset):
+        predictions = list()
+        for index, row in dataset.iterrows():
+            if self.row_covered(row):
+                predictions.append(1)
+            else:
+                predictions.append(0)
+        return predictions
+
+    def row_covered(self, row):
+        if len(self.rules) == 0:
+            return True
+        for i in range(0, len(self.rules)):
+            if self.rules[i].row_covered(row):
+                return True
+        return False
+
+    def get_rules(self):
+        return self.rules
+
+    def get_number_of_rules(self):
+        return len(self.rules)
+
+    def print_rules(self):
+        for i in range(0, len(self.rules)):
+            print(self.rules[i].to_string())
 
 
 def split_into_trainset_testset(df, ratio):
@@ -53,89 +86,113 @@ def cubes_for_numeric_data(df, num_of_intervals):
     return df
 
 
-def test_all(df_all, prod, iters, dataset_type):
-    df_train, df = split_into_trainset_testset(df_all, 0.8)
-    all_ex = len(df)
-    p_ex = df[df.columns[-1]].sum()
+def remove_empty_values(df):
+    numeric_cols = df._get_numeric_data().columns
+    char_cols = df.select_dtypes('object').columns
+    for i in range(0, len(numeric_cols)):
+        avg = df[numeric_cols[i]].mean()
+        df[numeric_cols[i]] = df[numeric_cols[i]].fillna(value=avg)
+    for i in range(0, len(char_cols)):
+        df[char_cols[i]] = df[char_cols[i]].fillna(value='null')
+    return df
+
+
+def count_tp_fp_tn_fn(classes, predictions):
+    tp = 0
+    fp = 0
+    tn = 0
+    fn = 0
+    if len(classes) != len(predictions):
+        print("Vector with classes and vector with predictions should have same lenght")
+        return
+    for i in range(0, len(classes)):
+        if classes[i] == predictions[i]:
+            if classes[i] == 1:
+                tp += 1
+            else:
+                tn += 1
+        else:
+            if classes[i] == 1:
+                fn += 1
+            else:
+                fp += 1
+    return tp, fp, tn, fn
+
+
+def test_all(df_all, prod, iters, dataset_type, filename):
+    df_train, df_test = split_into_trainset_testset(df_all, 0.8)
+    all_ex = len(df_test)
+    p_ex = df_test[df_test.columns[-1]].sum()
     n_ex = all_ex - p_ex
-    p_ex *= iters
-    n_ex *= iters
-    all_ex *= iters
-    print(all_ex, p_ex, n_ex)
-    p_all = 0
-    n_all = 0
-    time_all = 0
-    rules_all = 0
+    tp = list()
+    fp = list()
+    tn = list()
+    fn = list()
+    times = list()
+    number_of_rules = list()
+    errors = list()
+    p = list()
+    n = list()
+    all = list()
+    features = list()
     for j in range(0, iters):
-        c_df = copy.deepcopy(df)
+        p.append(p_ex)
+        n.append(n_ex)
+        all.append(all_ex)
         start = time.time()
-        dataset = dataset_type(prod, df_train)
-        rules = create_rules(dataset)
+        rule_creator = RuleCreator(dataset_type, df_train, prod)
         end = time.time()
-        for i in range(0, len(rules)):
-            # print(rules[i].to_string())
-            # print(rules[i].count_p_n(df, last_col_name))
-            p, n = rules[i].count_p_n(c_df)
-            p_all += p
-            n_all += n
-            c_df = delete_covered(c_df, rules[i])
-        if len(rules)==0:
-            p_all += p_ex/iters
-            n_all += n_ex/iters
-        time_all += (end - start)
-        rules_all += len(rules)
-    tp = p_all
-    fp = n_all
-    tn = n_ex - n_all
-    fn = p_ex - p_all
-    precision = tp / (tp + fp)
-    recall = tp / (tp + fn)
-    accuracy = (tp + tn) / (tp + tn + fn + fp)
-    print("TP: " + str(tp) + " FP: " + str(fp))
-    print("TN: " + str(tn) + " FN: " + str(fn))
-    print("Precision: " + str(precision))
-    print("Recall: " + str(recall))
-    print("Accuracy: " + str(accuracy))
-    print("Average time: " + str(time_all / iters))
-    print("Average number of rules: " + str(rules_all / iters))
-    print("Average errors: " + str((fp + fn) / iters))
-
-
-def delete_covered(growset, rule):
-    growset_dict = growset.to_dict()
-    idx = set()
-    for i in range(0, len(growset)):
-        to_delete = True
-        for j in range(0, len(rule.literals)):
-            if not rule.literals[j].value_covered_by_literal(growset_dict[rule.literals[j].var_name][i]):
-                to_delete = False
-                break
-        if to_delete:
-            idx.add(i)
-    indexes_to_keep = set(range(growset.shape[0])) - idx
-    growset = growset.take(list(indexes_to_keep))
-    growset.index = range(len(growset))
-    return growset
-
-
-
+        times.append(end - start)
+        number_of_rules.append(rule_creator.get_number_of_rules())
+        predictions = rule_creator.predict(df_test)
+        tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(df_test[df_test.columns[-1]].tolist(), predictions)
+        tp.append(tp_tmp)
+        fp.append(fp_tmp)
+        tn.append(tn_tmp)
+        fn.append(fn_tmp)
+        errors.append(fp_tmp + fn_tmp)
+        features.append(len(df_train.columns) - 1)
+        print(j)
+    results = pd.DataFrame(
+        {'All examples': all,
+         'Positive examples': p,
+         'Negative examples': n,
+         'TP': tp,
+         'FP': fp,
+         'TN': tn,
+         'FN': fn,
+         'Errors (FP + FN)': errors,
+         'Time in seconds': times,
+         'Number of rules': number_of_rules,
+         'Number of features': features
+         })
+    results.to_csv(filename, sep=';', encoding='utf-8')
+    return results
 
 
 # print("MUSHROOM")
 # df = pd.read_csv('data_files/mushroom.csv',
 #                  encoding='utf-8', delimiter=';')
-# test_all(df, 1, 1, DictDataset)
-#
-# print("MUSHROOM")
-# df = pd.read_csv('data_files/mushroom.csv',
-#                  encoding='utf-8', delimiter=';')
-# test_all(df, 1, 1, NpArrayDataset)
+# rule_creator = RuleCreator(NpArrayDataset, df, 1)
+# predictions = rule_creator.predict(df)
+# tp, fp, tn, fn = count_tp_fp_tn_fn(df[df.columns[-1]].tolist(), predictions)
+# print(tp,fp,tn,fn)
+
 #
 print("MUSHROOM")
-df = pd.read_csv('data_files/bank-full.csv',
+# df = pd.read_csv('data_files/hypothyroid.csv',
+#                  encoding='utf-8', delimiter=';')
+df = pd.read_csv('data_files/hypothyroid_mult1000.csv',
                  encoding='utf-8', delimiter=';')
-df = cubes_for_numeric_data(df,10)
-test_all(df, 1, 1, NpArrayDataset)
+df = cubes_for_numeric_data(df, 10)
+# df = remove_empty_values(df)
+test_all(df, 1, 1, BitmapDataset, 'results_files/hypothyroid_mult1000_bitmap.csv')
+#
+# print("MUSHROOM")
+# df = pd.read_csv('data_files/bank-full.csv',
+#                  encoding='utf-8', delimiter=';')
+# df = cubes_for_numeric_data(df, 10)
+# test_all(df, 1, 1, NpArrayDataset)
 # print("HYPOTHYROID")
 # df = pd.read_csv('data_files/hypothyroid.csv',
 #                  encoding='utf-8', delimiter=';')
@@ -175,8 +232,7 @@ test_all(df, 1, 1, NpArrayDataset)
 # print("PHONEME")
 # df = pd.read_csv('data_files/phoneme.csv',
 #                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,30)
-# test_all(df, 1, 10, NpArrayDataset)
+# test_all(df, 1, 10, DictDataset, 'results_files/phoneme_dictdataset.csv')
 
 # print("PHONEME")
 # df = pd.read_csv('data_files/phoneme.csv',

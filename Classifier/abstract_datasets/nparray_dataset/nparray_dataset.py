@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 
 
-
 class NpArrayDataset(AbstractDataset):
     def __init__(self, prod=1, dataset=None, col_val_tables=None, col_names=None,
                  col_unique_values=None, pos_map=None, neg_map=None):
@@ -36,7 +35,8 @@ class NpArrayDataset(AbstractDataset):
                     for j in range(0, len(self.col_unique_values[i])):
                         act_col = self.col_names[i]
                         act_value = self.col_unique_values[i][j]
-                        self.col_val_tables[i].append(NpArrayDataset.create_bitmap_for_value(act_col, act_value, dataset))
+                        self.col_val_tables[i].append(
+                            NpArrayDataset.create_bitmap_for_value(act_col, act_value, dataset))
 
     def create_tables_for_every_value(self, dataset):
         for i in range(0, len(self.col_names)):
@@ -66,9 +66,9 @@ class NpArrayDataset(AbstractDataset):
         self.neg_map = np.take(self.neg_map, idx)[0]
 
     def grow_rule(self):
-        return self.grow_rule_sorted_p_n()
+        # return self.grow_rule_sorted_p_n()
 
-        # return self.grow_rule_inductive()
+        return self.grow_rule_inductive()
 
     def grow_rule_inductive(self):
         best_rule = list()
@@ -267,5 +267,3 @@ class NpArrayDataset(AbstractDataset):
 
     def length(self):
         return len(self.pos_map)
-
-
