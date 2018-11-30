@@ -5,7 +5,10 @@ import pandas as pd
 from sklearn import datasets
 from sklearn.cluster import KMeans
 import sklearn.metrics as sm
+import matplotlib.pyplot as plt
 import time
+from sklearn import tree
+from sklearn import preprocessing
 
 from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
 from Classifier.abstract_datasets.dict_dataset.dict_dataset import DictDataset
@@ -35,7 +38,7 @@ class RuleCreator:
                 new_rule = trainset.make_rule(new_rule)
                 rules.append(new_rule)
                 # print("Rule: " + new_rule.to_string() + "Time: " + str(end - start) + "s")
-            if max_iter >= 5 or trainset.length() < 60 or not trainset.is_any_pos_example():
+            if max_iter >= 5 or not trainset.is_any_pos_example():
                 break
         return rules
 
@@ -67,15 +70,18 @@ class RuleCreator:
             print(self.rules[i].to_string())
 
 
-def split_into_trainset_testset(df, ratio):
+def split_kfold(df, kfold):
     df = df.sample(frac=1)
     df.index = range(len(df))
-    div_idx = math.floor(len(df) * ratio)
-    trainset = df[0:div_idx]
-    trainset.index = range(len(trainset))
-    testset = df[div_idx:]
-    testset.index = range(len(testset))
-    return trainset, testset
+    div_idx = math.floor(len(df) / kfold)
+    kfold_sets = list()
+    for i in range(0, kfold):
+        if i == kfold - 1:
+            temp_set = df[i * div_idx:]
+        else:
+            temp_set = df[i * div_idx:(i + 1) * div_idx]
+        kfold_sets.append(temp_set)
+    return kfold_sets
 
 
 def cubes_for_numeric_data(df, num_of_intervals):
@@ -119,11 +125,13 @@ def count_tp_fp_tn_fn(classes, predictions):
     return tp, fp, tn, fn
 
 
-def test_all(df_all, prod, iters, dataset_type, filename):
-    df_train, df_test = split_into_trainset_testset(df_all, 0.8)
-    all_ex = len(df_test)
-    p_ex = df_test[df_test.columns[-1]].sum()
-    n_ex = all_ex - p_ex
+def exclude(lst, i):
+    if i == 0:
+        return lst[i + 1:]
+    return lst[:i] + lst[i + 1:]
+
+
+def test_all(df_all, iters, filename, increasing, kfold, dataset_type=None, dtree=False):
     tp = list()
     fp = list()
     tn = list()
@@ -135,26 +143,63 @@ def test_all(df_all, prod, iters, dataset_type, filename):
     n = list()
     all = list()
     features = list()
-    for j in range(0, iters):
-        p.append(p_ex)
-        n.append(n_ex)
-        all.append(all_ex)
-        start = time.time()
-        rule_creator = RuleCreator(dataset_type, df_train, prod)
-        end = time.time()
-        times.append(end - start)
-        number_of_rules.append(rule_creator.get_number_of_rules())
-        predictions = rule_creator.predict(df_test)
-        tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(df_test[df_test.columns[-1]].tolist(), predictions)
-        tp.append(tp_tmp)
-        fp.append(fp_tmp)
-        tn.append(tn_tmp)
-        fn.append(fn_tmp)
-        errors.append(fp_tmp + fn_tmp)
-        features.append(len(df_train.columns) - 1)
-        print(j)
+    all_train = list()
+    acc = list()
+    kfold_list = list()
+    for j in range(0, increasing):
+        for i in range(0, iters):
+            kfold_datasets = split_kfold(df_all, kfold)
+            for k in range(0, kfold):
+                df_test = kfold_datasets[k]
+                df_train = pd.concat(exclude(kfold_datasets, k))
+                df_test.index = range(len(df_test))
+                df_train.index = range(len(df_train))
+                print(len(df_test))
+                print(len(df_train))
+                all_ex = len(df_test)
+                p_ex = df_test[df_test.columns[-1]].sum()
+                n_ex = all_ex - p_ex
+                all_train_ex = len(df_train)
+                all_train.append(all_train_ex)
+                p.append(p_ex)
+                n.append(n_ex)
+                all.append(all_ex)
+                if dtree == True:
+                    start = time.time()
+                    le = preprocessing.LabelEncoder()
+                    df_train = df_train.apply(le.fit_transform)
+                    df_test = df_test.apply(le.fit_transform)
+                    X = df_train.loc[:, df_train.columns != df_train.columns[-1]]
+                    Y = df_train[df_train.columns[-1]]
+                    clf = tree.DecisionTreeClassifier()
+                    clf = clf.fit(X, Y)
+                    end = time.time()
+                    predictions = clf.predict(df_test.loc[:, df_test.columns != df_test.columns[-1]])
+                    number_of_rules.append(-1)
+                    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(df_test[df_test.columns[-1]], predictions)
+                else:
+                    start = time.time()
+                    rule_creator = RuleCreator(dataset_type, df_train, 1)
+                    end = time.time()
+                    number_of_rules.append(rule_creator.get_number_of_rules())
+                    predictions = rule_creator.predict(df_test)
+                    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(df_test[df_test.columns[-1]].tolist(),
+                                                                       predictions)
+                times.append(end - start)
+                tp.append(tp_tmp)
+                fp.append(fp_tmp)
+                tn.append(tn_tmp)
+                fn.append(fn_tmp)
+                kfold_list.append(k + 1)
+                errors.append(fp_tmp + fn_tmp)
+                features.append(len(df_train.columns) - 1)
+                acc.append((tp_tmp + tn_tmp) / (tp_tmp + tn_tmp + fp_tmp + fn_tmp))
+                print("Iter: " + str(i))
+        df_all = pd.concat([df_all] * 2, ignore_index=True)
+        print("Increasing: " + str(j))
     results = pd.DataFrame(
-        {'All examples': all,
+        {'All train examples': all_train,
+         'All test examples': all,
          'Positive examples': p,
          'Negative examples': n,
          'TP': tp,
@@ -162,86 +207,69 @@ def test_all(df_all, prod, iters, dataset_type, filename):
          'TN': tn,
          'FN': fn,
          'Errors (FP + FN)': errors,
+         'Accuracy': acc,
          'Time in seconds': times,
          'Number of rules': number_of_rules,
-         'Number of features': features
+         'Number of features': features,
+         'Kfold': kfold_list
          })
-    results.to_csv(filename, sep=';', encoding='utf-8')
+    if filename != '':
+        results.to_csv(filename, sep=';', encoding='utf-8', index_label='id')
+    else:
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', None)
+        print(results)
     return results
 
 
-# print("MUSHROOM")
+def produce_diagram(files, line_labels, col_x, col_y, x_label, y_label, x_fontsize, y_fontsize, linewidth,
+                    legend_fontsize=0, tick_size=0, x_size=10, y_size=10, groupby=False):
+    df_files = list()
+    lines = list()
+    for i in range(0, len(files)):
+        df_files.append(pd.read_csv(files[i], encoding='utf-8', delimiter=';'))
+        if groupby == True:
+            df_files[i] = df_files[i].groupby(col_x).mean()
+    plt.figure(figsize=(x_size, y_size))
+    for i in range(0, len(files)):
+        if groupby == False:
+            line, = plt.plot(df_files[i][col_x], df_files[i][col_y], linewidth=linewidth, label=line_labels[i])
+        else:
+            line, = plt.plot(df_files[i].index, df_files[i][col_y], linewidth=linewidth, label=line_labels[i])
+    if legend_fontsize > 0:
+        plt.legend(handles=lines)
+        plt.legend(bbox_to_anchor=(1, 1), prop={'size': legend_fontsize})
+    plt.xlabel(x_label, fontsize=x_fontsize)
+    plt.ylabel(y_label, fontsize=y_fontsize)
+    if tick_size > 0:
+        plt.tick_params(labelsize=tick_size)
+    plt.show()
+
+
 # df = pd.read_csv('data_files/mushroom.csv',
 #                  encoding='utf-8', delimiter=';')
-# rule_creator = RuleCreator(NpArrayDataset, df, 1)
-# predictions = rule_creator.predict(df)
-# tp, fp, tn, fn = count_tp_fp_tn_fn(df[df.columns[-1]].tolist(), predictions)
-# print(tp,fp,tn,fn)
+# # df = df.drop('encounter_id', axis=1)
+# # df = df.drop('patient_nbr', axis=1)
+# # test_all(df, 10, 'results_files/mushroom_tree.csv', 1, dtree=True)
+# test_all(df, 3, 'results_files/mushroom_dict.csv', 1, 3,dataset_type=DictDataset, dtree=False)
+# df = pd.read_csv('data_files/mushroom.csv',
+#                  encoding='utf-8', delimiter=';')
+# # df = df.drop('encounter_id', axis=1)
+# # df = df.drop('patient_nbr', axis=1)
+# test_all(df, 3, 'results_files/mushroom_bitmap.csv', 1, 3, dataset_type=BitmapDataset, dtree=False)
 
-#
-print("MUSHROOM")
-# df = pd.read_csv('data_files/hypothyroid.csv',
-#                  encoding='utf-8', delimiter=';')
-df = pd.read_csv('data_files/hypothyroid_mult1000.csv',
-                 encoding='utf-8', delimiter=';')
-df = cubes_for_numeric_data(df, 10)
-# df = remove_empty_values(df)
-test_all(df, 1, 1, BitmapDataset, 'results_files/hypothyroid_mult1000_bitmap.csv')
-#
-# print("MUSHROOM")
-# df = pd.read_csv('data_files/bank-full.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df, 10)
-# test_all(df, 1, 1, NpArrayDataset)
-# print("HYPOTHYROID")
-# df = pd.read_csv('data_files/hypothyroid.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 10, NpArrayDataset)
-#
-# print("HYPOTHYROID")
-# df = pd.read_csv('data_files/hypothyroid.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,30)
-# test_all(df, 1, 10, NpArrayDataset)
-#
-# print("HYPOTHYROID")
-# df = pd.read_csv('data_files/hypothyroid.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 10, NpArrayDataset)
-
-# print("HYPOTHYROID")
-# df = pd.read_csv('data_files/hypothyroid.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 10, BitmapDataset)
-#
-# print("HYPOTHYROID")
-# df = pd.read_csv('data_files/hypothyroid.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,50)
-# test_all(df, 1, 10, NpArrayDataset)
-
-# print("PHONEME")
-# df = pd.read_csv('data_files/phoneme.csv',
-#                  encoding='utf-8', delimiter=';')
-# # df = cubes_for_numeric_data(df,10)
-# test_all(df, 1, 3, DictDataset)
-#
-# print("PHONEME")
-# df = pd.read_csv('data_files/phoneme.csv',
-#                  encoding='utf-8', delimiter=';')
-# test_all(df, 1, 10, DictDataset, 'results_files/phoneme_dictdataset.csv')
-
-# print("PHONEME")
-# df = pd.read_csv('data_files/phoneme.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,30)
-# test_all(df, 1, 1, BitmapDataset)
-#
-# print("PHONEME")
-# df = pd.read_csv('data_files/phoneme.csv',
-#                  encoding='utf-8', delimiter=';')
-# df = cubes_for_numeric_data(df,50)
-# test_all(df, 1, 10, NpArrayDataset)
+produce_diagram(files=['results_files/mushroom_bitmap.csv', 'results_files/mushroom_tree.csv'],
+                line_labels=['bitmap', 'tree'],
+                col_x='All train examples',
+                col_y='Time in seconds',
+                x_label='Liczba przykładów',
+                y_label='Czas w sekundach',
+                x_fontsize=20,
+                y_fontsize=20,
+                linewidth=2,
+                legend_fontsize=15,
+                tick_size=15,
+                x_size=15,
+                y_size=10,
+                groupby=False
+                )

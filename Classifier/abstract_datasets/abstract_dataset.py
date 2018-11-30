@@ -58,8 +58,8 @@ def count_foil_grow(p0, n0, p, n):
     else:
         if p == 0:
             return -math.inf
-        if n == 0 and n0 == 0:
-            return p - p0
+        # if n == 0 and n0 == 0:
+        #     return p - p0
         try:
             return p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2))
         except (ZeroDivisionError, ValueError):

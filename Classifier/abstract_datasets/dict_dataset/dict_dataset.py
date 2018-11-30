@@ -59,8 +59,10 @@ class DictDataset(AbstractDataset):
             best_l = None
             for i in range(0, len(list(growset.dict.keys())) - 1):
                 col_name = list(growset.dict.keys())[i]
-                col_values = list(set(growset.dict[col_name].values()))
-                l, foil = growset.find_best_literal(p0, n0, col_values, col_name)
+                foil = best_foil
+                if col_name not in [x.var_name for x in rule.literals]:
+                    col_values = list(set(growset.dict[col_name].values()))
+                    l, foil = growset.find_best_literal(p0, n0, col_values, col_name)
                 if foil > best_foil:
                     best_l = copy.deepcopy(l)
                     best_foil = foil

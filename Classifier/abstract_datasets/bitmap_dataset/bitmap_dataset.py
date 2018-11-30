@@ -50,7 +50,7 @@ class BitmapDataset(AbstractDataset):
 
     @staticmethod
     def create_bitmap_for_value(act_col, act_value, dataset):
-        return BitMap(dataset.index[dataset[act_col] == act_value].tolist())
+        return BitMap(dataset.index[dataset[act_col] == act_value])
 
     def delete_covered(self, rule):
         new_rule = self.make_rules_from_iters(rule)
@@ -71,6 +71,7 @@ class BitmapDataset(AbstractDataset):
         self.all_id = self.all_id & new_rule
 
     def grow_rule(self):
+
         return self.grow_rule_sorted_p_n()
 
         # return self.grow_rule_inductive()
@@ -82,14 +83,16 @@ class BitmapDataset(AbstractDataset):
             best_foil = -math.inf
             p0, n0 = self.count_p_n_rule(best_rule)
             for i in range(0, len(self.col_names)):
-                tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0, n0, best_rule)
-                if tmp_foil > best_foil:
-                    best_l = copy.deepcopy(tmp_l)
-                    best_foil = tmp_foil
+                if i not in [x[0] for x in best_rule]:
+                    tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0, n0, best_rule)
+                    if tmp_foil > best_foil:
+                        best_l = copy.deepcopy(tmp_l)
+                        best_foil = tmp_foil
             if best_foil <= 0:
                 break
             else:
                 best_rule = best_rule + best_l
+
         return best_rule
 
     def grow_rule_inductive(self):
@@ -98,15 +101,16 @@ class BitmapDataset(AbstractDataset):
             best_foil = -math.inf
             best_l = None
             for i in range(0, len(self.col_val_tables)):
-                for j in range(0, len(self.col_val_tables[i])):
-                    p0, n0 = self.count_p_n_rule(best_rule)
-                    new_rule = copy.deepcopy(best_rule)
-                    new_rule.append([i, j])
-                    p, n = self.count_p_n_rule(new_rule)
-                    tmp_foil = count_foil_grow(p0, n0, p, n)
-                    if tmp_foil > best_foil:
-                        best_foil = tmp_foil
-                        best_l = (i, j)
+                if i not in [x[0] for x in best_rule]:
+                    for j in range(0, len(self.col_val_tables[i])):
+                        p0, n0 = self.count_p_n_rule(best_rule)
+                        new_rule = copy.deepcopy(best_rule)
+                        new_rule.append([i, j])
+                        p, n = self.count_p_n_rule(new_rule)
+                        tmp_foil = count_foil_grow(p0, n0, p, n)
+                        if tmp_foil > best_foil:
+                            best_foil = tmp_foil
+                            best_l = (i, j)
             if best_foil > 0:
                 best_rule.append(best_l)
             else:
@@ -185,6 +189,8 @@ class BitmapDataset(AbstractDataset):
 
     def prune_rule(self, rule):
         len_rule = len(rule) - 1
+        if len(rule) == 0:
+            return None
         for i in range(len_rule, -1, -1):
             pruned_rule = copy.deepcopy(rule)
             del pruned_rule[i]
@@ -203,11 +209,13 @@ class BitmapDataset(AbstractDataset):
             return rule
 
     def split_into_growset_pruneset(self):
+
         count_growset = round(self.length() * 2 / 3)
         idx = self.choose_idx_for_split(count_growset)
         ids_grow = BitMap()
+        all_id_arr = self.all_id.to_array()
         for i in range(0, len(idx)):
-            ids_grow.add(self.all_id[idx[i]])
+            ids_grow.add(all_id_arr[idx[i]])
         col_val_tables_grow, col_val_tables_prune = self.split_by_idx(ids_grow)
         pos_map_grow = self.pos_map & ids_grow
         neg_map_grow = self.neg_map & ids_grow
