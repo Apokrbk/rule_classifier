@@ -13,7 +13,7 @@ import pandas as pd
 
 class BitmapDataset(AbstractDataset):
     def __init__(self, prod=1, dataset=None, col_val_tables=None, col_names=None,
-                 col_unique_values=None, pos_map=None, neg_map=None):
+                 col_unique_values=None, pos_map=None, neg_map=None, grow_param_raw=0, prune_param_raw=0):
         super().__init__(prod, dataset)
         if dataset is None:
             self.prod = prod
@@ -23,18 +23,30 @@ class BitmapDataset(AbstractDataset):
             self.pos_map = pos_map
             self.neg_map = neg_map
             self.all_id = self.pos_map | self.neg_map
+            self.grow_param_raw = grow_param_raw
+            self.prune_param_raw = prune_param_raw
+            self.grow_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
+                -1) * grow_param_raw
+            self.prune_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
+                -1) * prune_param_raw
         else:
             self.prod = prod
             self.col_val_tables = list()
             self.col_names = dataset.columns
             self.col_names = self.col_names[:-1]
             self.col_unique_values = list()
+            self.grow_param_raw = grow_param_raw
+            self.prune_param_raw = prune_param_raw
             self.create_tables_for_every_value(dataset)
             pos_idx = dataset.index[dataset[dataset.columns[-1]] == 1].tolist()
             self.pos_map = BitMap(pos_idx)
             neg_idx = dataset.index[dataset[dataset.columns[-1]] == 0].tolist()
             self.neg_map = BitMap(neg_idx)
             self.all_id = self.pos_map | self.neg_map
+            self.grow_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
+                -1) * grow_param_raw
+            self.prune_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
+                -1) * prune_param_raw
             if len(dataset) != 0:
                 for i in range(0, len(self.col_names)):
                     for j in range(0, len(self.col_unique_values[i])):
@@ -88,11 +100,10 @@ class BitmapDataset(AbstractDataset):
                     if tmp_foil > best_foil:
                         best_l = copy.deepcopy(tmp_l)
                         best_foil = tmp_foil
-            if best_foil <= 0:
+            if best_foil <= self.grow_param:
                 break
             else:
                 best_rule = best_rule + best_l
-
         return best_rule
 
     def grow_rule_inductive(self):
@@ -101,17 +112,16 @@ class BitmapDataset(AbstractDataset):
             best_foil = -math.inf
             best_l = None
             for i in range(0, len(self.col_val_tables)):
-                if i not in [x[0] for x in best_rule]:
-                    for j in range(0, len(self.col_val_tables[i])):
-                        p0, n0 = self.count_p_n_rule(best_rule)
-                        new_rule = copy.deepcopy(best_rule)
-                        new_rule.append([i, j])
-                        p, n = self.count_p_n_rule(new_rule)
-                        tmp_foil = count_foil_grow(p0, n0, p, n)
-                        if tmp_foil > best_foil:
-                            best_foil = tmp_foil
-                            best_l = (i, j)
-            if best_foil > 0:
+                for j in range(0, len(self.col_val_tables[i])):
+                    p0, n0 = self.count_p_n_rule(best_rule)
+                    new_rule = copy.deepcopy(best_rule)
+                    new_rule.append([i, j])
+                    p, n = self.count_p_n_rule(new_rule)
+                    tmp_foil = count_foil_grow(p0, n0, p, n)
+                    if tmp_foil > best_foil:
+                        best_foil = tmp_foil
+                        best_l = (i, j)
+            if best_foil > self.grow_param:
                 best_rule.append(best_l)
             else:
                 break
@@ -188,28 +198,32 @@ class BitmapDataset(AbstractDataset):
         return new_rule
 
     def prune_rule(self, rule):
-        len_rule = len(rule) - 1
         if len(rule) == 0:
             return None
-        for i in range(len_rule, -1, -1):
+        unique_atr = list(set([i[0] for i in rule]))
+        len_rule_unique_atr = len(unique_atr)
+
+        for i in range(len_rule_unique_atr - 1, -1, -1):
             pruned_rule = copy.deepcopy(rule)
-            del pruned_rule[i]
+            for j in range(len(rule) - 1, -1, -1):
+                if rule[j][0] == unique_atr[i]:
+                    del pruned_rule[j]
             p, n = self.count_p_n_rule(rule)
             p0, n0 = self.count_p_n_rule(pruned_rule)
-            if p0 != 0 and p != 0:
-                if n0 == 0 and n == 0 and p > p0:
-                    pass
-                elif p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) <= 0:
-                    del rule[i]
-            if p == 0:
-                del rule[i]
+            if count_foil_grow(p0, n0, p, n) <= self.prune_param:
+                rule = copy.deepcopy(pruned_rule)
+            # if p0 != 0 and p != 0:
+            #     if n0 == 0 and n == 0 and p > p0:
+            #         pass
+            #     elif p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) <= self.prune_param:
+            #         del rule[i]
+        print(p, n)
         if p == 0 or n >= p or len(rule) == 0:
             return None
         else:
             return rule
 
     def split_into_growset_pruneset(self):
-
         count_growset = round(self.length() * 2 / 3)
         idx = self.choose_idx_for_split(count_growset)
         ids_grow = BitMap()
@@ -223,10 +237,12 @@ class BitmapDataset(AbstractDataset):
         neg_map_prune = self.neg_map - ids_grow
         return BitmapDataset(prod=self.prod, col_val_tables=col_val_tables_grow,
                              col_names=self.col_names, col_unique_values=self.col_unique_values, pos_map=pos_map_grow,
-                             neg_map=neg_map_grow), \
+                             neg_map=neg_map_grow, grow_param_raw=self.grow_param_raw,
+                             prune_param_raw=self.prune_param_raw), \
                BitmapDataset(prod=self.prod, col_val_tables=col_val_tables_prune,
                              col_names=self.col_names, col_unique_values=self.col_unique_values, pos_map=pos_map_prune,
-                             neg_map=neg_map_prune)
+                             neg_map=neg_map_prune, grow_param_raw=self.grow_param_raw,
+                             prune_param_raw=self.prune_param_raw)
 
     def choose_idx_for_split(self, count_growset):
         if self.prod == 1:
