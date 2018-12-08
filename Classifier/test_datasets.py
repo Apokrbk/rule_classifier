@@ -165,9 +165,9 @@ def test_all(df_all, iters, filename, increasing, kfold, dataset_type=None, dtre
     return results
 
 
-df = pd.read_csv('data_files/phoneme.csv',
+df = pd.read_csv('data_files/mushroom.csv',
                  encoding='utf-8', delimiter=';')
 
-df = cubes_for_numeric_data(df,5)
-test_all(df, 3, 'results_files/phoneme5645756.csv', 1, 5, dataset_type=BitmapDataset, dtree=False)
+# df = cubes_for_numeric_data(df,5)
+test_all(df, 3, 'results_files/mushroom124215.csv', 1, 5, dataset_type=DictDataset, dtree=False)
 

@@ -8,13 +8,27 @@ from Classifier.rule import Rule
 
 
 class DictDataset(AbstractDataset):
-    def __init__(self, prod, dataset):
+    def __init__(self, prod, dataset, grow_param_raw=0, prune_param_raw=0):
         super().__init__(prod, dataset)
         self.df = dataset
         self.dict = dataset.to_dict()
         self.numeric_cols, self.char_cols = self.split_into_numeric_car_cols()
         self.class_name = self.df.columns[len(self.df.columns) - 1]
         self.prod = prod
+        self.prune_param_raw = prune_param_raw
+        self.grow_param_raw = grow_param_raw
+        self.update_grow_prune_param()
+
+    def update_grow_prune_param(self):
+        pos = len(self.df[self.df[self.class_name] == 1])
+        if pos == 0:
+            self.grow_param = math.inf
+            self.prune_param = math.inf
+        else:
+            self.grow_param = pos * math.log(pos / len(self.df), 2) * (
+                -1) * self.grow_param_raw
+            self.prune_param = pos * math.log(pos / len(self.df), 2) * (
+                -1) * self.prune_param_raw
 
     def delete_covered(self, rule):
         idx = set()
@@ -32,6 +46,7 @@ class DictDataset(AbstractDataset):
         self.df = self.df.take(list(indexes_to_keep))
         self.df.index = range(len(self.df))
         self.dict = self.df.to_dict()
+        self.update_grow_prune_param()
 
     def delete_not_covered(self, rule):
         idx = set()
@@ -49,6 +64,7 @@ class DictDataset(AbstractDataset):
         self.df = self.df.take(list(indexes_to_keep))
         self.df.index = range(len(self.df))
         self.dict = self.df.to_dict()
+        self.update_grow_prune_param()
 
     def grow_rule(self):
         rule = Rule()
@@ -66,10 +82,11 @@ class DictDataset(AbstractDataset):
                 if foil > best_foil:
                     best_l = copy.deepcopy(l)
                     best_foil = foil
-            if best_foil <= 0 or best_foil == -math.inf:
+            if best_foil > self.grow_param:
+                rule.add_literal(best_l)
+                growset.delete_not_covered(rule)
+            else:
                 break
-            rule.add_literal(best_l)
-            growset.delete_not_covered(rule)
         return rule
 
     def find_best_literal(self, p0, n0, col_values, col_name):
@@ -86,10 +103,7 @@ class DictDataset(AbstractDataset):
             pruned_rule.delete_literal(not_pruned_rule.literals[i])
             p, n = self.count_p_n_rule(rule)
             p0, n0 = self.count_p_n_rule(pruned_rule)
-            if p0 != 0 and p != 0:
-                if p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) <= 0:
-                    rule.delete_literal(not_pruned_rule.literals[i])
-            if p == 0:
+            if count_foil_grow(p0, n0, p, n) <= self.prune_param:
                 rule.delete_literal(not_pruned_rule.literals[i])
         p, n = self.count_p_n_rule(rule)
         if p == 0 or n >= p or len(rule.literals) == 0:
@@ -108,7 +122,10 @@ class DictDataset(AbstractDataset):
         growset.index = range(len(growset))
         pruneset = trainset[div_idx:]
         pruneset.index = range(len(pruneset))
-        return DictDataset(self.prod, growset), DictDataset(self.prod, pruneset)
+        return DictDataset(self.prod, growset, grow_param_raw=self.grow_param_raw,
+                           prune_param_raw=self.prune_param_raw), \
+               DictDataset(self.prod, pruneset, grow_param_raw=self.grow_param_raw,
+                           prune_param_raw=self.prune_param_raw)
 
     def split_into_numeric_car_cols(self):
         numeric_cols = self.df._get_numeric_data().columns
@@ -236,4 +253,3 @@ class DictDataset(AbstractDataset):
 
     def length(self):
         return len(self.df)
-

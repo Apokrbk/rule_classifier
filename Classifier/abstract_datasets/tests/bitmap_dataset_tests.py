@@ -308,7 +308,7 @@ class TestNotebook(unittest.TestCase):
         ds = BitmapDataset(1, df)
         rule = ds.prune_rule(ds.unmake_rule(rule))
         rule = ds.make_rule(rule)
-        self.assertEqual("Sex in ['Female']", rule.to_string())
+        self.assertEqual("", rule.to_string())
 
     def test_prune_rule_2(self):
         df = pd.read_csv('test_files/mushroom.csv', encoding='utf-8', delimiter=';')

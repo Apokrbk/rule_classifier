@@ -25,10 +25,7 @@ class BitmapDataset(AbstractDataset):
             self.all_id = self.pos_map | self.neg_map
             self.grow_param_raw = grow_param_raw
             self.prune_param_raw = prune_param_raw
-            self.grow_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
-                -1) * grow_param_raw
-            self.prune_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
-                -1) * prune_param_raw
+            self.update_grow_prune_param(grow_param_raw, prune_param_raw)
         else:
             self.prod = prod
             self.col_val_tables = list()
@@ -38,15 +35,8 @@ class BitmapDataset(AbstractDataset):
             self.grow_param_raw = grow_param_raw
             self.prune_param_raw = prune_param_raw
             self.create_tables_for_every_value(dataset)
-            pos_idx = dataset.index[dataset[dataset.columns[-1]] == 1].tolist()
-            self.pos_map = BitMap(pos_idx)
-            neg_idx = dataset.index[dataset[dataset.columns[-1]] == 0].tolist()
-            self.neg_map = BitMap(neg_idx)
-            self.all_id = self.pos_map | self.neg_map
-            self.grow_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
-                -1) * grow_param_raw
-            self.prune_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
-                -1) * prune_param_raw
+            self.create_pos_neg_all_bitmaps(dataset)
+            self.update_grow_prune_param(grow_param_raw, prune_param_raw)
             if len(dataset) != 0:
                 for i in range(0, len(self.col_names)):
                     for j in range(0, len(self.col_unique_values[i])):
@@ -54,6 +44,23 @@ class BitmapDataset(AbstractDataset):
                         act_value = self.col_unique_values[i][j]
                         self.col_val_tables[i].append(
                             BitmapDataset.create_bitmap_for_value(act_col, act_value, dataset))
+
+    def create_pos_neg_all_bitmaps(self, dataset):
+        pos_idx = dataset.index[dataset[dataset.columns[-1]] == 1].tolist()
+        self.pos_map = BitMap(pos_idx)
+        neg_idx = dataset.index[dataset[dataset.columns[-1]] == 0].tolist()
+        self.neg_map = BitMap(neg_idx)
+        self.all_id = self.pos_map | self.neg_map
+
+    def update_grow_prune_param(self, grow_param_raw, prune_param_raw):
+        if len(self.pos_map) == 0:
+            self.grow_param = math.inf
+            self.prune_param = math.inf
+        else:
+            self.grow_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
+                -1) * grow_param_raw
+            self.prune_param = len(self.pos_map) * math.log(len(self.pos_map) / len(self.all_id), 2) * (
+                -1) * prune_param_raw
 
     def create_tables_for_every_value(self, dataset):
         for i in range(0, len(self.col_names)):
@@ -72,6 +79,7 @@ class BitmapDataset(AbstractDataset):
         self.pos_map = self.pos_map - new_rule
         self.neg_map = self.neg_map - new_rule
         self.all_id = self.all_id - new_rule
+        self.update_grow_prune_param(self.grow_param_raw, self.prune_param_raw)
 
     def delete_not_covered(self, rule):
         new_rule = self.make_rules_from_iters(rule)
@@ -81,6 +89,7 @@ class BitmapDataset(AbstractDataset):
         self.pos_map = self.pos_map & new_rule
         self.neg_map = self.neg_map & new_rule
         self.all_id = self.all_id & new_rule
+        self.update_grow_prune_param(self.grow_param_raw, self.prune_param_raw)
 
     def grow_rule(self):
 
@@ -100,10 +109,10 @@ class BitmapDataset(AbstractDataset):
                     if tmp_foil > best_foil:
                         best_l = copy.deepcopy(tmp_l)
                         best_foil = tmp_foil
-            if best_foil <= self.grow_param:
-                break
-            else:
+            if best_foil > self.grow_param:
                 best_rule = best_rule + best_l
+            else:
+                break
         return best_rule
 
     def grow_rule_inductive(self):
@@ -166,7 +175,7 @@ class BitmapDataset(AbstractDataset):
         return p_to_n
 
     def make_rule(self, rule):
-        if len(rule) == 0:
+        if rule is None or len(rule) == 0:
             return Rule()
         rule = sorted(rule, key=lambda x: x[0])
         prev_i = -1
@@ -212,11 +221,6 @@ class BitmapDataset(AbstractDataset):
             p0, n0 = self.count_p_n_rule(pruned_rule)
             if count_foil_grow(p0, n0, p, n) <= self.prune_param:
                 rule = copy.deepcopy(pruned_rule)
-            # if p0 != 0 and p != 0:
-            #     if n0 == 0 and n == 0 and p > p0:
-            #         pass
-            #     elif p * (math.log((p / (p + n)), 2) - math.log((p0 / (p0 + n0)), 2)) <= self.prune_param:
-            #         del rule[i]
         print(p, n)
         if p == 0 or n >= p or len(rule) == 0:
             return None
