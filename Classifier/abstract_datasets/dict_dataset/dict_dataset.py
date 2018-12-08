@@ -76,7 +76,7 @@ class DictDataset(AbstractDataset):
             for i in range(0, len(list(growset.dict.keys())) - 1):
                 col_name = list(growset.dict.keys())[i]
                 foil = best_foil
-                if col_name not in [x.var_name for x in rule.literals]:
+                if col_name not in [x.var_name for x in rule.literals] or col_name in self.numeric_cols:
                     col_values = list(set(growset.dict[col_name].values()))
                     l, foil = growset.find_best_literal(p0, n0, col_values, col_name)
                 if foil > best_foil:

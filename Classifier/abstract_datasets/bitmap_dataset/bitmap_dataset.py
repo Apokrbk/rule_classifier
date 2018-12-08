@@ -221,7 +221,6 @@ class BitmapDataset(AbstractDataset):
             p0, n0 = self.count_p_n_rule(pruned_rule)
             if count_foil_grow(p0, n0, p, n) <= self.prune_param:
                 rule = copy.deepcopy(pruned_rule)
-        print(p, n)
         if p == 0 or n >= p or len(rule) == 0:
             return None
         else:

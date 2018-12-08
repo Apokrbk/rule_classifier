@@ -3,10 +3,11 @@ import pandas as pd
 import time
 from sklearn import tree
 from sklearn import preprocessing
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
 from Classifier.abstract_datasets.dict_dataset.dict_dataset import DictDataset
-from Classifier.abstract_datasets.nparray_dataset.nparray_dataset import NpArrayDataset
 from Classifier.rule_creator import RuleCreator
 
 
@@ -71,7 +72,95 @@ def exclude(lst, i):
     return lst[:i] + lst[i + 1:]
 
 
-def test_all(df_all, iters, filename, increasing, kfold, dataset_type=None, dtree=False):
+def test_all(df_all, iters, filename, increasing, kfold, method, dataset_type=BitmapDataset, grow_param_raw=0,
+             prune_param_raw=0):
+    acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p, times, tn, tp = init_results()
+    for j in range(0, increasing):
+        for i in range(0, iters):
+            kfold_datasets = split_kfold(df_all, kfold)
+            for k in range(0, kfold):
+                df_test, df_train = divide_into_test_train(k, kfold_datasets)
+                count_examples(all, all_train, df_test, df_train, n, p)
+                X_train = df_train.loc[:, df_train.columns != df_train.columns[-1]]
+                Y_train = df_train[df_train.columns[-1]]
+                X_test = df_test.loc[:, df_test.columns != df_test.columns[-1]]
+                Y_test = df_test[df_test.columns[-1]]
+                fn_tmp, fp_tmp, tn_tmp, tp_tmp, time_tmp, number_of_rules_tmp = method(X_train, Y_train, X_test, Y_test,
+                                                                                       dataset_type=dataset_type,
+                                                                                       grow_param_raw=grow_param_raw,
+                                                                                       prune_param_raw=prune_param_raw)
+                add_results(acc, df_train, errors, features, fn, fn_tmp, fp, fp_tmp, inc, j, k, kfold_list, tn, tn_tmp,
+                            tp, tp_tmp, times, time_tmp, number_of_rules, number_of_rules_tmp)
+                print("Iter: " + str(i))
+        df_all = pd.concat([df_all] * 2, ignore_index=True)
+        print("Increasing: " + str(j))
+    results = create_results(acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p,
+                             times, tn, tp)
+    if filename != '':
+        results.to_csv(filename, sep=';', encoding='utf-8', index_label='id')
+    else:
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', None)
+        print(results)
+    return results
+
+
+def create_results(acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p, times, tn,
+                   tp):
+    return pd.DataFrame(
+        {'All train examples': all_train,
+         'All test examples': all,
+         'Positive examples': p,
+         'Negative examples': n,
+         'TP': tp,
+         'FP': fp,
+         'TN': tn,
+         'FN': fn,
+         'Errors (FP + FN)': errors,
+         'Accuracy': acc,
+         'Time in seconds': times,
+         'Number of rules': number_of_rules,
+         'Number of features': features,
+         'Kfold': kfold_list,
+         'Increasing': inc
+         })
+
+
+def add_results(acc, df_train, errors, features, fn, fn_tmp, fp, fp_tmp, inc, j, k, kfold_list, tn, tn_tmp, tp, tp_tmp,
+                times, time_tmp, number_of_rules, number_of_rules_tmp):
+    times.append(time_tmp)
+    number_of_rules.append(number_of_rules_tmp)
+    tp.append(tp_tmp)
+    fp.append(fp_tmp)
+    tn.append(tn_tmp)
+    fn.append(fn_tmp)
+    kfold_list.append(k + 1)
+    errors.append(fp_tmp + fn_tmp)
+    features.append(len(df_train.columns) - 1)
+    acc.append((tp_tmp + tn_tmp) / (tp_tmp + tn_tmp + fp_tmp + fn_tmp))
+    inc.append(j)
+
+
+def count_examples(all, all_train, df_test, df_train, n, p):
+    all_ex = len(df_test)
+    p_ex = df_test[df_test.columns[-1]].sum()
+    n_ex = all_ex - p_ex
+    all_train_ex = len(df_train)
+    all_train.append(all_train_ex)
+    p.append(p_ex)
+    n.append(n_ex)
+    all.append(all_ex)
+
+
+def divide_into_test_train(k, kfold_datasets):
+    df_test = kfold_datasets[k]
+    df_train = pd.concat(exclude(kfold_datasets, k))
+    df_test.index = range(len(df_test))
+    df_train.index = range(len(df_train))
+    return df_test, df_train
+
+
+def init_results():
     tp = list()
     fp = list()
     tn = list()
@@ -87,87 +176,102 @@ def test_all(df_all, iters, filename, increasing, kfold, dataset_type=None, dtre
     acc = list()
     kfold_list = list()
     inc = list()
-    for j in range(0, increasing):
-        for i in range(0, iters):
-            kfold_datasets = split_kfold(df_all, kfold)
-            for k in range(0, kfold):
-                df_test = kfold_datasets[k]
-                df_train = pd.concat(exclude(kfold_datasets, k))
-                df_test.index = range(len(df_test))
-                df_train.index = range(len(df_train))
-                print(len(df_test))
-                print(len(df_train))
-                all_ex = len(df_test)
-                p_ex = df_test[df_test.columns[-1]].sum()
-                n_ex = all_ex - p_ex
-                all_train_ex = len(df_train)
-                all_train.append(all_train_ex)
-                p.append(p_ex)
-                n.append(n_ex)
-                all.append(all_ex)
-                if dtree == True:
-                    start = time.time()
-                    le = preprocessing.LabelEncoder()
-                    df_train = df_train.apply(le.fit_transform)
-                    df_test = df_test.apply(le.fit_transform)
-                    X = df_train.loc[:, df_train.columns != df_train.columns[-1]]
-                    Y = df_train[df_train.columns[-1]]
-                    clf = tree.DecisionTreeClassifier()
-                    clf = clf.fit(X, Y)
-                    end = time.time()
-                    predictions = clf.predict(df_test.loc[:, df_test.columns != df_test.columns[-1]])
-                    number_of_rules.append(-1)
-                    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(df_test[df_test.columns[-1]], predictions)
-                else:
-                    start = time.time()
-                    rule_creator = RuleCreator(dataset_type, df_train, 1)
-                    end = time.time()
-                    number_of_rules.append(rule_creator.get_number_of_rules())
-                    predictions = rule_creator.predict(df_test)
-                    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(df_test[df_test.columns[-1]].tolist(),
-                                                                       predictions)
-                times.append(end - start)
-                tp.append(tp_tmp)
-                fp.append(fp_tmp)
-                tn.append(tn_tmp)
-                fn.append(fn_tmp)
-                kfold_list.append(k + 1)
-                errors.append(fp_tmp + fn_tmp)
-                features.append(len(df_train.columns) - 1)
-                acc.append((tp_tmp + tn_tmp) / (tp_tmp + tn_tmp + fp_tmp + fn_tmp))
-                inc.append(j)
-                print("Iter: " + str(i))
-        df_all = pd.concat([df_all] * 2, ignore_index=True)
-        print("Increasing: " + str(j))
-    results = pd.DataFrame(
-        {'All train examples': all_train,
-         'All test examples': all,
-         'Positive examples': p,
-         'Negative examples': n,
-         'TP': tp,
-         'FP': fp,
-         'TN': tn,
-         'FN': fn,
-         'Errors (FP + FN)': errors,
-         'Accuracy': acc,
-         'Time in seconds': times,
-         'Number of rules': number_of_rules,
-         'Number of features': features,
-         'Kfold': kfold_list,
-         'Increasing' : inc
-         })
-    if filename != '':
-        results.to_csv(filename, sep=';', encoding='utf-8', index_label='id')
-    else:
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.width', None)
-        print(results)
-    return results
+    return acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p, times, tn, tp
+
+
+def test_rule_creator(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset,
+                      grow_param_raw=0, prune_param_raw=0):
+
+    start = time.time()
+    rule_creator = RuleCreator(dataset_type=dataset_type, grow_param_raw=grow_param_raw,
+                               prune_param_raw=prune_param_raw)
+    rule_creator.fit(X_train, Y_train)
+    end = time.time()
+    predictions = rule_creator.predict(X_test)
+    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(Y_test,predictions)
+    return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end-start, rule_creator.get_number_of_rules()
+
+
+def test_regression(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset, grow_param_raw=0, prune_param_raw=0):
+    start = time.time()
+    X_test, X_train, Y_test, Y_train = preprocess_for_scikit(X_test, X_train, Y_test, Y_train)
+    clf = LogisticRegression()
+    clf = clf.fit(X_train, Y_train)
+    end = time.time()
+    predictions = clf.predict(X_test)
+    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(Y_test, predictions)
+    return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end - start, -1
+
+
+def preprocess_for_scikit(X_test, X_train, Y_test, Y_train):
+    le = preprocessing.LabelEncoder()
+    X_train = X_train.apply(le.fit_transform)
+    X_test = X_test.apply(le.fit_transform)
+    return X_test, X_train, Y_test, Y_train
+
+
+def test_random_forest(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset,
+                       grow_param_raw=0, prune_param_raw=0):
+    start = time.time()
+    X_test, X_train, Y_test, Y_train = preprocess_for_scikit(X_test, X_train, Y_test, Y_train)
+    clf = RandomForestClassifier(n_estimators=10, random_state=0)
+    clf = clf.fit(X_train, Y_train)
+    end = time.time()
+    predictions = clf.predict(X_test)
+    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(Y_test, predictions)
+    return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end - start, -1
+
+
+def test_tree(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset, grow_param_raw=0,
+              prune_param_raw=0):
+    start = time.time()
+    X_test, X_train, Y_test, Y_train = preprocess_for_scikit(X_test, X_train, Y_test, Y_train)
+    clf = tree.DecisionTreeClassifier()
+    clf = clf.fit(X_train, Y_train)
+    end = time.time()
+    predictions = clf.predict(X_test)
+    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(Y_test, predictions)
+    return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end-start, -1
+
+
 
 
 df = pd.read_csv('data_files/mushroom.csv',
                  encoding='utf-8', delimiter=';')
+test_all(df, 1, 'results_files/mushroom_rule_creator.csv', 1, 5, method=test_rule_creator, dataset_type=DictDataset)
+test_all(df, 1, 'results_files/mushroom_tree.csv', 1, 5, method=test_tree)
+test_all(df, 1, 'results_files/mushroom_random_forest.csv', 1, 5, method=test_random_forest)
+test_all(df, 1, 'results_files/mushroom_regression.csv', 1, 5, method=test_regression)
+df = cubes_for_numeric_data(df, 10)
+test_all(df, 1, 'results_files/mushroom_rule_creator.csv', 1, 5, method=test_rule_creator)
 
-# df = cubes_for_numeric_data(df,5)
-test_all(df, 3, 'results_files/mushroom124215.csv', 1, 5, dataset_type=DictDataset, dtree=False)
+df = pd.read_csv('data_files/phoneme.csv',
+                 encoding='utf-8', delimiter=';')
+
+test_all(df, 1, 'results_files/phoneme_rule_creator.csv', 1, 5, method=test_rule_creator, dataset_type=DictDataset)
+test_all(df, 1, 'results_files/phoneme_tree.csv', 1, 5, method=test_tree)
+test_all(df, 1, 'results_files/phoneme_random_forest.csv', 1, 5, method=test_random_forest)
+test_all(df, 1, 'results_files/phoneme_regression.csv', 1, 5, method=test_regression)
+df = cubes_for_numeric_data(df, 10)
+test_all(df, 1, 'results_files/phoneme_rule_creator.csv', 1, 5, method=test_rule_creator)
+
+df = pd.read_csv('data_files/hypothyroid.csv',
+                 encoding='utf-8', delimiter=';')
+
+test_all(df, 1, 'results_files/hypothyroid_rule_creator.csv', 1, 5, method=test_rule_creator, dataset_type=DictDataset)
+test_all(df, 1, 'results_files/hypothyroid_tree.csv', 1, 5, method=test_tree)
+test_all(df, 1, 'results_files/hypothyroid_random_forest.csv', 1, 5, method=test_random_forest)
+test_all(df, 1, 'results_files/hypothyroid_regression.csv', 1, 5, method=test_regression)
+df = cubes_for_numeric_data(df, 10)
+test_all(df, 1, 'results_files/hypothyroid_rule_creator.csv', 1, 5, method=test_rule_creator)
+
+df = pd.read_csv('data_files/glass.csv',
+                 encoding='utf-8', delimiter=';')
+
+test_all(df, 1, 'results_files/glass_rule_creator.csv', 1, 5, method=test_rule_creator, dataset_type=DictDataset)
+test_all(df, 1, 'results_files/glass_tree.csv', 1, 5, method=test_tree)
+test_all(df, 1, 'results_files/glass_random_forest.csv', 1, 5, method=test_random_forest)
+test_all(df, 1, 'results_files/glass_regression.csv', 1, 5, method=test_regression)
+df = cubes_for_numeric_data(df, 10)
+test_all(df, 1, 'results_files/glass_rule_creator.csv', 1, 5, method=test_rule_creator)
 
