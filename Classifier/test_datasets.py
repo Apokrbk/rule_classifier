@@ -29,7 +29,8 @@ def cubes_for_numeric_data(df, num_of_intervals):
     numeric_cols = df._get_numeric_data().columns
     numeric_cols = numeric_cols[:-1]
     for i in range(0, len(numeric_cols)):
-        df[numeric_cols[i]] = pd.qcut(df[numeric_cols[i]], num_of_intervals, duplicates='drop').astype(str)
+        if len(df[numeric_cols[i]].unique()) > 50:
+            df[numeric_cols[i]] = pd.qcut(df[numeric_cols[i]], num_of_intervals, duplicates='drop').astype(str)
     return df
 
 
@@ -73,7 +74,7 @@ def exclude(lst, i):
 
 
 def test_all(df_all, iters, filename, increasing, kfold, method, dataset_type=BitmapDataset, grow_param_raw=0,
-             prune_param_raw=0):
+             prune_param_raw=0, forest_trees=10):
     acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p, times, tn, tp = init_results()
     for j in range(0, increasing):
         for i in range(0, iters):
@@ -88,7 +89,7 @@ def test_all(df_all, iters, filename, increasing, kfold, method, dataset_type=Bi
                 fn_tmp, fp_tmp, tn_tmp, tp_tmp, time_tmp, number_of_rules_tmp = method(X_train, Y_train, X_test, Y_test,
                                                                                        dataset_type=dataset_type,
                                                                                        grow_param_raw=grow_param_raw,
-                                                                                       prune_param_raw=prune_param_raw)
+                                                                                       prune_param_raw=prune_param_raw, forest_trees=forest_trees)
                 add_results(acc, df_train, errors, features, fn, fn_tmp, fp, fp_tmp, inc, j, k, kfold_list, tn, tn_tmp,
                             tp, tp_tmp, times, time_tmp, number_of_rules, number_of_rules_tmp)
                 print("Iter: " + str(i))
@@ -180,19 +181,18 @@ def init_results():
 
 
 def test_rule_creator(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset,
-                      grow_param_raw=0, prune_param_raw=0):
-
+                      grow_param_raw=0, prune_param_raw=0, forest_trees=10):
     start = time.time()
     rule_creator = RuleCreator(dataset_type=dataset_type, grow_param_raw=grow_param_raw,
                                prune_param_raw=prune_param_raw)
     rule_creator.fit(X_train, Y_train)
     end = time.time()
     predictions = rule_creator.predict(X_test)
-    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(Y_test,predictions)
-    return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end-start, rule_creator.get_number_of_rules()
+    tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(Y_test, predictions)
+    return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end - start, rule_creator.get_number_of_rules()
 
 
-def test_regression(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset, grow_param_raw=0, prune_param_raw=0):
+def test_regression(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset, grow_param_raw=0, prune_param_raw=0, forest_trees=10):
     start = time.time()
     X_test, X_train, Y_test, Y_train = preprocess_for_scikit(X_test, X_train, Y_test, Y_train)
     clf = LogisticRegression()
@@ -211,10 +211,10 @@ def preprocess_for_scikit(X_test, X_train, Y_test, Y_train):
 
 
 def test_random_forest(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset,
-                       grow_param_raw=0, prune_param_raw=0):
+                       grow_param_raw=0, prune_param_raw=0, forest_trees=10):
     start = time.time()
     X_test, X_train, Y_test, Y_train = preprocess_for_scikit(X_test, X_train, Y_test, Y_train)
-    clf = RandomForestClassifier(n_estimators=10, random_state=0)
+    clf = RandomForestClassifier(n_estimators=forest_trees)
     clf = clf.fit(X_train, Y_train)
     end = time.time()
     predictions = clf.predict(X_test)
@@ -223,7 +223,7 @@ def test_random_forest(X_train, Y_train, X_test, Y_test, dataset_type=BitmapData
 
 
 def test_tree(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset, grow_param_raw=0,
-              prune_param_raw=0):
+              prune_param_raw=0, forest_trees=10):
     start = time.time()
     X_test, X_train, Y_test, Y_train = preprocess_for_scikit(X_test, X_train, Y_test, Y_train)
     clf = tree.DecisionTreeClassifier()
@@ -231,47 +231,13 @@ def test_tree(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset, grow
     end = time.time()
     predictions = clf.predict(X_test)
     tp_tmp, fp_tmp, tn_tmp, fn_tmp = count_tp_fp_tn_fn(Y_test, predictions)
-    return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end-start, -1
+    return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end - start, -1
 
 
 
-
+print("MUSHROOM")
 df = pd.read_csv('data_files/mushroom.csv',
                  encoding='utf-8', delimiter=';')
-test_all(df, 1, 'results_files/mushroom_rule_creator.csv', 1, 5, method=test_rule_creator, dataset_type=DictDataset)
-test_all(df, 1, 'results_files/mushroom_tree.csv', 1, 5, method=test_tree)
-test_all(df, 1, 'results_files/mushroom_random_forest.csv', 1, 5, method=test_random_forest)
-test_all(df, 1, 'results_files/mushroom_regression.csv', 1, 5, method=test_regression)
-df = cubes_for_numeric_data(df, 10)
-test_all(df, 1, 'results_files/mushroom_rule_creator.csv', 1, 5, method=test_rule_creator)
+test_all(df, 1, 'results_files/mushroom_rule_creator_tree_inc.csv', 10, 5, method=test_tree)
 
-df = pd.read_csv('data_files/phoneme.csv',
-                 encoding='utf-8', delimiter=';')
-
-test_all(df, 1, 'results_files/phoneme_rule_creator.csv', 1, 5, method=test_rule_creator, dataset_type=DictDataset)
-test_all(df, 1, 'results_files/phoneme_tree.csv', 1, 5, method=test_tree)
-test_all(df, 1, 'results_files/phoneme_random_forest.csv', 1, 5, method=test_random_forest)
-test_all(df, 1, 'results_files/phoneme_regression.csv', 1, 5, method=test_regression)
-df = cubes_for_numeric_data(df, 10)
-test_all(df, 1, 'results_files/phoneme_rule_creator.csv', 1, 5, method=test_rule_creator)
-
-df = pd.read_csv('data_files/hypothyroid.csv',
-                 encoding='utf-8', delimiter=';')
-
-test_all(df, 1, 'results_files/hypothyroid_rule_creator.csv', 1, 5, method=test_rule_creator, dataset_type=DictDataset)
-test_all(df, 1, 'results_files/hypothyroid_tree.csv', 1, 5, method=test_tree)
-test_all(df, 1, 'results_files/hypothyroid_random_forest.csv', 1, 5, method=test_random_forest)
-test_all(df, 1, 'results_files/hypothyroid_regression.csv', 1, 5, method=test_regression)
-df = cubes_for_numeric_data(df, 10)
-test_all(df, 1, 'results_files/hypothyroid_rule_creator.csv', 1, 5, method=test_rule_creator)
-
-df = pd.read_csv('data_files/glass.csv',
-                 encoding='utf-8', delimiter=';')
-
-test_all(df, 1, 'results_files/glass_rule_creator.csv', 1, 5, method=test_rule_creator, dataset_type=DictDataset)
-test_all(df, 1, 'results_files/glass_tree.csv', 1, 5, method=test_tree)
-test_all(df, 1, 'results_files/glass_random_forest.csv', 1, 5, method=test_random_forest)
-test_all(df, 1, 'results_files/glass_regression.csv', 1, 5, method=test_regression)
-df = cubes_for_numeric_data(df, 10)
-test_all(df, 1, 'results_files/glass_rule_creator.csv', 1, 5, method=test_rule_creator)
 

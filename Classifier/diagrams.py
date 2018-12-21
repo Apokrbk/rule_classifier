@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def produce_diagram(files, line_labels, col_x, col_y, x_label, y_label, x_fontsize, y_fontsize, linewidth,
@@ -12,7 +13,7 @@ def produce_diagram(files, line_labels, col_x, col_y, x_label, y_label, x_fontsi
             df_files[i] = df_files[i].groupby('Increasing').mean()
     plt.figure(figsize=(x_size, y_size))
     for i in range(0, len(files)):
-        line, = plt.plot(df_files[i][col_x], df_files[i][col_y], linewidth=linewidth, label=line_labels[i])
+        line, = plt.plot(df_files[i][col_x], df_files[i][col_y], linewidth=linewidth, marker='o')
     if legend_fontsize > 0:
         plt.legend(handles=lines)
         plt.legend(bbox_to_anchor=(1, 1), prop={'size': legend_fontsize})
@@ -23,18 +24,73 @@ def produce_diagram(files, line_labels, col_x, col_y, x_label, y_label, x_fontsi
     plt.show()
 
 
-produce_diagram(files=['results_files/mushroom_test.csv', 'results_files/mushroom_test2.csv'],
-                line_labels=['bitmap','dict'],
-                col_x='All train examples',
-                col_y='Time in seconds',
-                x_label='Liczba przykładów',
-                y_label='Czas w sekundach',
-                x_fontsize=20,
-                y_fontsize=20,
-                linewidth=2,
-                legend_fontsize=15,
-                tick_size=15,
-                x_size=15,
-                y_size=10,
-                groupby=True
-                )
+# produce_diagram(files=['results_files/mushjroom_rule_creator_bitmap_inc.csv'],
+#                 line_labels=['bitmap'],
+#                 col_x='All train examples',
+#                 col_y='Time in seconds',
+#                 x_label='Liczba przykładów',
+#                 y_label='Czas w sekundach',
+#                 x_fontsize=20,
+#                 y_fontsize=20,
+#                 linewidth=2,
+#                 legend_fontsize=15,
+#                 tick_size=15,
+#                 x_size=12,
+#                 y_size=8,
+#                 groupby=True
+#                 )
+
+def cube_diagram(file1, file2, file3, file4, file5, variable, x_size=12, y_size=8):
+    df1 = pd.read_csv(file1, encoding='utf-8', delimiter=';')
+    df1 = df1[variable]
+    df2 = pd.read_csv(file2, encoding='utf-8', delimiter=';')
+    df2 = df2[variable]
+    df3 = pd.read_csv(file3, encoding='utf-8', delimiter=';')
+    df3 = df3[variable]
+    df4 = pd.read_csv(file4, encoding='utf-8', delimiter=';')
+    df4 = df4[variable]
+    df5 = pd.read_csv(file5, encoding='utf-8', delimiter=';')
+    df5 = df5[variable]
+    data = [df1, df2, df3, df4, df5]
+    plt.boxplot(data, showfliers=False)
+    plt.xticks([1, 2, 3, 4 , 5], ['RD-B', 'RD-A', 'RF', 'RL', 'DT'])
+    plt.xlabel('Metoda', fontsize=12)
+    plt.ylabel('Liczba błędów', fontsize=12)
+    plt.show()
+
+
+cube_diagram('results_files/income_rule_creator_bitmap_10_0_0.csv',
+             'results_files/income_rule_creator_dict_0_0.csv',
+             'results_files/income_random_forest_100trees.csv',
+             'results_files/income_regression.csv',
+             'results_files/income_tree.csv',
+             'Errors (FP + FN)')
+
+
+cube_diagram('results_files/nba_5y_rule_creator_bitmap_10_005_005.csv',
+             'results_files/nba_5y_rule_creator_dict_01_0.csv',
+             'results_files/nba_5y_random_forest_100trees.csv',
+             'results_files/nba_5y_regression.csv',
+             'results_files/nba_5y_tree.csv',
+             'Errors (FP + FN)')
+
+cube_diagram('results_files/phoneme_rule_creator_bitmap_10_0_0.csv',
+             'results_files/phoneme_rule_creator_dict_005_005.csv',
+             'results_files/phoneme_random_forest_100trees.csv',
+             'results_files/phoneme_regression.csv',
+             'results_files/phoneme_tree.csv',
+             'Errors (FP + FN)')
+
+cube_diagram('results_files/glass_rule_creator_bitmap_10_02_02.csv',
+             'results_files/glass_rule_creator_dict_03_03.csv',
+             'results_files/glass_random_forest_100trees.csv',
+             'results_files/glass_regression.csv',
+             'results_files/glass_tree.csv',
+             'Errors (FP + FN)')
+
+cube_diagram('results_files/breast_cancer_rule_creator_bitmap_10_005_005.csv',
+             'results_files/breast_cancer_rule_creator_dict_0_0.csv',
+             'results_files/breast_cancer_random_forest_100trees.csv',
+             'results_files/breast_cancer_regression.csv',
+             'results_files/breast_cancer_tree.csv',
+             'Errors (FP + FN)')
