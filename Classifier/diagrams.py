@@ -24,7 +24,7 @@ def produce_diagram(files, line_labels, col_x, col_y, x_label, y_label, x_fontsi
     plt.show()
 
 
-# produce_diagram(files=['results_files/mushjroom_rule_creator_bitmap_inc.csv'],
+# produce_diagram(files=['old_used/mushjroom_rule_creator_bitmap_inc.csv'],
 #                 line_labels=['bitmap'],
 #                 col_x='All train examples',
 #                 col_y='Time in seconds',
@@ -40,7 +40,7 @@ def produce_diagram(files, line_labels, col_x, col_y, x_label, y_label, x_fontsi
 #                 groupby=True
 #                 )
 
-def cube_diagram(file1, file2, file3, file4, file5, variable, x_size=12, y_size=8):
+def cube_diagram(file1, file2, file3, file4, file5, file6, variable, x_size=12, y_size=8):
     df1 = pd.read_csv(file1, encoding='utf-8', delimiter=';')
     df1 = df1[variable]
     df2 = pd.read_csv(file2, encoding='utf-8', delimiter=';')
@@ -51,46 +51,65 @@ def cube_diagram(file1, file2, file3, file4, file5, variable, x_size=12, y_size=
     df4 = df4[variable]
     df5 = pd.read_csv(file5, encoding='utf-8', delimiter=';')
     df5 = df5[variable]
-    data = [df1, df2, df3, df4, df5]
+    df6 = pd.read_csv(file6, encoding='utf-8', delimiter=';')
+    df6 = df6[variable]
+    data = [df1, df2, df3, df4, df5, df6]
     plt.boxplot(data, showfliers=False)
-    plt.xticks([1, 2, 3, 4 , 5], ['RD-B', 'RD-A', 'RF', 'RL', 'DT'])
+    plt.xticks([1, 2, 3, 4 , 5, 6], ['DT', 'RF', 'RL', 'RD-A', 'RD-B', 'RD-BR'], fontsize=12)
     plt.xlabel('Metoda', fontsize=12)
     plt.ylabel('Liczba błędów', fontsize=12)
     plt.show()
 
 
-cube_diagram('results_files/income_rule_creator_bitmap_10_0_0.csv',
-             'results_files/income_rule_creator_dict_0_0.csv',
-             'results_files/income_random_forest_100trees.csv',
-             'results_files/income_regression.csv',
-             'results_files/income_tree.csv',
+cube_diagram('old_used/income_tree.csv',
+             'old_used/income_random_forest_100trees.csv',
+             'old_used/income_regression.csv',
+             'old_used/income_rule_creator_dict_0_0.csv',
+             'old_used/income_rule_creator_bitmap_10_0_0.csv',
+             'old_used/income_rule_creator_bitmap_50_0_0_R.csv',
              'Errors (FP + FN)')
 
 
-cube_diagram('results_files/nba_5y_rule_creator_bitmap_10_005_005.csv',
-             'results_files/nba_5y_rule_creator_dict_01_0.csv',
-             'results_files/nba_5y_random_forest_100trees.csv',
-             'results_files/nba_5y_regression.csv',
-             'results_files/nba_5y_tree.csv',
+cube_diagram('old_used/nba_5y_tree.csv',
+             'old_used/nba_5y_random_forest_100trees.csv',
+             'old_used/nba_5y_regression.csv',
+             'old_used/nba_5y_rule_creator_dict_01_0.csv',
+             'old_used/nba_5y_rule_creator_bitmap_10_005_005.csv',
+             'old_used/nba_5y_rule_creator_bitmap_10_005_005_R.csv',
              'Errors (FP + FN)')
 
-cube_diagram('results_files/phoneme_rule_creator_bitmap_10_0_0.csv',
-             'results_files/phoneme_rule_creator_dict_005_005.csv',
-             'results_files/phoneme_random_forest_100trees.csv',
-             'results_files/phoneme_regression.csv',
-             'results_files/phoneme_tree.csv',
+
+cube_diagram('old_used/phoneme_tree.csv',
+             'old_used/phoneme_random_forest_100trees.csv',
+             'old_used/phoneme_regression.csv',
+             'old_used/phoneme_rule_creator_dict_005_005.csv',
+             'old_used/phoneme_rule_creator_bitmap_10_0_0.csv',
+             'old_used/phoneme_rule_creator_bitmap_10_0_0_R.csv',
              'Errors (FP + FN)')
 
-cube_diagram('results_files/glass_rule_creator_bitmap_10_02_02.csv',
-             'results_files/glass_rule_creator_dict_03_03.csv',
-             'results_files/glass_random_forest_100trees.csv',
-             'results_files/glass_regression.csv',
-             'results_files/glass_tree.csv',
+
+cube_diagram('old_used/glass_tree.csv',
+             'old_used/glass_random_forest_100trees.csv',
+             'old_used/glass_regression.csv',
+             'old_used/glass_rule_creator_dict_03_03.csv',
+             'old_used/glass_rule_creator_bitmap_10_02_02.csv',
+             'old_used/glass_rule_creator_bitmap_10_02_02_R.csv',
              'Errors (FP + FN)')
 
-cube_diagram('results_files/breast_cancer_rule_creator_bitmap_10_005_005.csv',
-             'results_files/breast_cancer_rule_creator_dict_0_0.csv',
-             'results_files/breast_cancer_random_forest_100trees.csv',
-             'results_files/breast_cancer_regression.csv',
-             'results_files/breast_cancer_tree.csv',
+
+cube_diagram('old_used/breast_cancer_tree.csv',
+             'old_used/breast_cancer_random_forest_100trees.csv',
+             'old_used/breast_cancer_regression.csv',
+             'old_used/breast_cancer_rule_creator_dict_0_0.csv',
+             'old_used/breast_cancer_rule_creator_bitmap_10_005_005.csv',
+             'old_used/breast_cancer_rule_creator_bitmap_10_0_0_R.csv',
+             'Errors (FP + FN)')
+
+
+cube_diagram('old_used/mushroom_tree.csv',
+             'old_used/mushroom_random_forest_100trees.csv',
+             'old_used/mushroom_regression.csv',
+             'old_used/mushroom_rule_creator_dict.csv',
+             'old_used/mushroom_rule_creator_bitmap.csv',
+             'old_used/mushroom_rule_creator_bitmap_R.csv',
              'Errors (FP + FN)')

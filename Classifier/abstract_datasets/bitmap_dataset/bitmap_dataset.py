@@ -13,10 +13,12 @@ import pandas as pd
 
 class BitmapDataset(AbstractDataset):
     def __init__(self, prod=1, dataset=None, col_val_tables=None, col_names=None,
-                 col_unique_values=None, pos_map=None, neg_map=None, grow_param_raw=0, prune_param_raw=0):
+                 col_unique_values=None, pos_map=None, neg_map=None, grow_param_raw=0,
+                 prune_param_raw=0, roulette_selection=False):
         super().__init__(prod, dataset)
         if dataset is None:
             self.prod = prod
+            self.roulette_selection = roulette_selection
             self.col_val_tables = col_val_tables
             self.col_names = col_names
             self.col_unique_values = col_unique_values
@@ -28,6 +30,7 @@ class BitmapDataset(AbstractDataset):
             self.update_grow_prune_param(grow_param_raw, prune_param_raw)
         else:
             self.prod = prod
+            self.roulette_selection = roulette_selection
             self.col_val_tables = list()
             self.col_names = dataset.columns
             self.col_names = self.col_names[:-1]
@@ -100,15 +103,19 @@ class BitmapDataset(AbstractDataset):
     def grow_rule_sorted_p_n(self):
         best_rule = list()
         while True:
-            best_l = None
-            best_foil = -math.inf
+            literals = list()
+            literals_gain = list()
             p0, n0 = self.count_p_n_rule(best_rule)
             for i in range(0, len(self.col_names)):
                 if i not in [x[0] for x in best_rule]:
                     tmp_l, tmp_foil = self.find_best_literal_from_variable(i, p0, n0, best_rule)
-                    if tmp_foil > best_foil:
-                        best_l = copy.deepcopy(tmp_l)
-                        best_foil = tmp_foil
+                    if tmp_foil > 0:
+                        literals.append(tmp_l)
+                        literals_gain.append(tmp_foil)
+            if self.roulette_selection:
+                best_l, best_foil = self.literal_choose_roulette(literals, literals_gain)
+            else:
+                best_l, best_foil = self.literal_choose_best(literals, literals_gain)
             if best_foil > self.grow_param:
                 best_rule = best_rule + best_l
             else:
@@ -241,11 +248,11 @@ class BitmapDataset(AbstractDataset):
         return BitmapDataset(prod=self.prod, col_val_tables=col_val_tables_grow,
                              col_names=self.col_names, col_unique_values=self.col_unique_values, pos_map=pos_map_grow,
                              neg_map=neg_map_grow, grow_param_raw=self.grow_param_raw,
-                             prune_param_raw=self.prune_param_raw), \
+                             prune_param_raw=self.prune_param_raw, roulette_selection=self.roulette_selection), \
                BitmapDataset(prod=self.prod, col_val_tables=col_val_tables_prune,
                              col_names=self.col_names, col_unique_values=self.col_unique_values, pos_map=pos_map_prune,
                              neg_map=neg_map_prune, grow_param_raw=self.grow_param_raw,
-                             prune_param_raw=self.prune_param_raw)
+                             prune_param_raw=self.prune_param_raw, roulette_selection=self.roulette_selection)
 
     def choose_idx_for_split(self, count_growset):
         if self.prod == 1:
@@ -300,3 +307,20 @@ class BitmapDataset(AbstractDataset):
 
     def length(self):
         return len(self.all_id)
+
+    def literal_choose_best(self, literals, literals_gain):
+        if len(literals) == 0:
+            return None, -math.inf
+        max_gain = max(literals_gain)
+        return literals[literals_gain.index(max_gain)], max_gain
+
+    def literal_choose_roulette(self, literals, literals_gain):
+        if len(literals) == 0:
+            return None, -math.inf
+        sum_gain = sum(literals_gain)
+        select = random.uniform(0, sum_gain)
+        current_sum = 0
+        for i in range(0, len(literals)):
+            current_sum += literals_gain[i]
+            if current_sum > select:
+                return literals[i], literals_gain[i]

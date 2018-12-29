@@ -5,17 +5,18 @@ from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDat
 
 class RuleCreator:
 
-    def __init__(self, dataset_type=BitmapDataset, prod=1, grow_param_raw=0, prune_param_raw=0):
+    def __init__(self, dataset_type=BitmapDataset, prod=1, grow_param_raw=0, prune_param_raw=0, roulette_selection=False):
         self.prod = prod
         self.rules = list()
         self.dataset_type = dataset_type
         self.grow_param_raw = grow_param_raw
         self.prune_param_raw = prune_param_raw
+        self.roulette_selection=roulette_selection
 
     def fit(self, df_x, df_y):
         df_x['__class__'] = df_y
         trainset = self.dataset_type(self.prod, df_x, grow_param_raw=self.grow_param_raw,
-                                     prune_param_raw=self.prune_param_raw)
+                                     prune_param_raw=self.prune_param_raw, roulette_selection=self.roulette_selection)
         rules = list()
         max_iter = 0
         while max_iter < 5 and trainset.is_any_pos_example():
