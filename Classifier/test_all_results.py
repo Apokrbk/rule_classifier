@@ -97,7 +97,7 @@ def test_all(df_all, iters, filename, increasing, kfold, method, dataset_type=Bi
                 print("Iter: " + str(i))
         df_all = pd.concat([df_all] * 2, ignore_index=True)
         print("Increasing: " + str(j))
-    results = create_results(acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p,
+    results = create_results_from_data(acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p,
                              times, tn, tp)
     if filename != '':
         results.to_csv(filename, sep=';', encoding='utf-8', index_label='id')
@@ -108,7 +108,7 @@ def test_all(df_all, iters, filename, increasing, kfold, method, dataset_type=Bi
     return results
 
 
-def create_results(acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p, times, tn,
+def create_results_from_data(acc, all, all_train, errors, features, fn, fp, inc, kfold_list, n, number_of_rules, p, times, tn,
                    tp):
     return pd.DataFrame(
         {'All train examples': all_train,
@@ -237,15 +237,4 @@ def test_tree(X_train, Y_train, X_test, Y_test, dataset_type=BitmapDataset, grow
     return fn_tmp, fp_tmp, tn_tmp, tp_tmp, end - start, -1
 
 
-
-# print("MUSHROOM")
-# df = pd.read_csv('data_files/mushroom.csv',
-#                  encoding='utf-8', delimiter=';')
-# test_all(df, 1, 'results_files/mushroom_rule_creator_bitmap_inc_roulette_false.csv', 7, 5, method=test_rule_creator, roulette_selection=True)
-#
-
-print("MUSHROOM")
-df = pd.read_csv('data_files/mushroom.csv',
-                 encoding='utf-8', delimiter=';')
-test_all(df, 10, 'results_files/mushroom_rule_creator_bitmap_R.csv', 1, 5, method=test_rule_creator, roulette_selection=True)
 
