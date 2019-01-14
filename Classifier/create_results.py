@@ -119,7 +119,7 @@ def create_results_for_all_files_in_path_time(path, filename_r=''):
         time_mean.append(get_mean_from_column_in_csv(path + filename, 'Time in seconds'))
         time_std.append(get_std_dev_from_column_in_csv(path + filename, 'Time in seconds'))
         features.append(get_mean_from_column_in_csv(path + filename, 'Number of features'))
-        all_train_examples.append(get_mean_from_column_in_csv(path+filename, 'All train examples'))
+        all_train_examples.append(get_mean_from_column_in_csv(path + filename, 'All train examples'))
     results = pd.DataFrame(
         {'filename': files,
          'time_mean': time_mean,
@@ -134,3 +134,33 @@ def create_results_for_all_files_in_path_time(path, filename_r=''):
     else:
         results.to_csv(filename_r, sep=';', encoding='utf-8', index_label='id')
 
+def create_results_for_all_files_in_path_time_rules(path, filename_r=''):
+    files = list()
+    time_mean = list()
+    time_std = list()
+    features = list()
+    all_train_examples = list()
+    rules = list()
+    for filename in os.listdir(path):
+        files.append(filename)
+        time_mean.append(get_mean_from_column_in_csv(path + filename, 'Time in seconds'))
+        time_std.append(get_std_dev_from_column_in_csv(path + filename, 'Time in seconds'))
+        features.append(get_mean_from_column_in_csv(path + filename, 'Number of features'))
+        all_train_examples.append(get_mean_from_column_in_csv(path + filename, 'All train examples'))
+        rules.append(get_mean_from_column_in_csv(path+filename, 'Number of rules'))
+    results = pd.DataFrame(
+        {'filename': files,
+         'time_mean': time_mean,
+         'time_std': time_std,
+         'number_of_features': features,
+         'train_examples': all_train_examples,
+         'num_of_rules': rules
+         })
+    if filename_r == '':
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', None)
+        print(results)
+    else:
+        results.to_csv(filename_r, sep=';', encoding='utf-8', index_label='id')
+
+create_results_for_all_files_in_path_time_rules('num_of_rules/', 'jakosciowe/num_of_rules_time.csv')

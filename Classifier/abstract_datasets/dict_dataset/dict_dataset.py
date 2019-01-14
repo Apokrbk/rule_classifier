@@ -111,13 +111,13 @@ class DictDataset(AbstractDataset):
         else:
             return rule
 
-    def split_into_growset_pruneset(self):
+    def split_into_growset_pruneset(self, ratio=2/3):
         if self.prod == 1:
             trainset = self.df.sample(frac=1)
         else:
             trainset = self.df
         trainset.index = range(len(trainset))
-        div_idx = math.floor(len(trainset) * 2 / 3)
+        div_idx = math.floor(len(trainset) * ratio)
         growset = trainset[0:div_idx]
         growset.index = range(len(growset))
         pruneset = trainset[div_idx:]

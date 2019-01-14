@@ -2,6 +2,7 @@ import pandas as pd
 
 from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
 from Classifier.abstract_datasets.dict_dataset.dict_dataset import DictDataset
+from Classifier.random_dataset import create_random_dataframe, condition1
 from Classifier.test_all_results import test_all, test_rule_creator, test_tree, test_random_forest, test_regression, \
     cubes_for_numeric_data
 
@@ -264,4 +265,13 @@ test_all(df, 10, 'results_files/nba_5y_rule_creator_bitmap_50_03_03_R.csv', 1, 5
 
 
 df = pd.read_csv('data_files/mushroom.csv', encoding='utf-8', dalimiter=';')
-test_all(df, 1)
+test_all(df, 5, 'results_files/mushroom_bitmap_increasing.csv', 15, 5, method=test_rule_creator, dataset_type=BitmapDataset)
+
+
+for i in range(0, 20):
+    df = create_random_dataframe(5, 100000 * (i+1), condition1, 0.1)
+    test_all(df, 5, 'results_files/random_dataset_rows_inc_' + str(i)+'.csv', 1, 5, method=test_rule_creator)
+
+for i in range(20, 25):
+    df = create_random_dataframe(5 + i * 2, 100000, condition1, 0.1)
+    test_all(df, 5, 'results_files/random_dataset_' + str(i) + '.csv', 1, 5, method=test_rule_creator)

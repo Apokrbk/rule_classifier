@@ -233,8 +233,8 @@ class BitmapDataset(AbstractDataset):
         else:
             return rule
 
-    def split_into_growset_pruneset(self):
-        count_growset = round(self.length() * 2 / 3)
+    def split_into_growset_pruneset(self, ratio=2/3):
+        count_growset = round(self.length() * ratio)
         idx = self.choose_idx_for_split(count_growset)
         ids_grow = BitMap()
         all_id_arr = self.all_id.to_array()

@@ -44,6 +44,3 @@ def condition1(columns, i):
         return False
 
 
-for i in range(20, 25):
-    df = create_random_dataframe(5 + i * 2, 100000, condition1, 0.1)
-    test_all(df, 5, 'results_files/random_dataset_' + str(i)+'.csv', 1, 5, method=test_rule_creator)
