@@ -2,13 +2,13 @@ import pandas as pd
 import math
 import copy
 
-from Classifier.abstract_datasets.abstract_dataset import AbstractDataset, count_foil_grow
-from Classifier.literal import Literal
-from Classifier.rule import Rule
+from rule_induction_classifier.abstract_datasets.abstract_dataset import AbstractDataset, count_foil_grow
+from rule_induction_classifier.literal import Literal
+from rule_induction_classifier.rule import Rule
 
 
 class DictDataset(AbstractDataset):
-    def __init__(self, prod, dataset, grow_param_raw=0, prune_param_raw=0):
+    def __init__(self, prod, dataset, grow_param_raw=0, prune_param_raw=0, roulette_selection=False):
         super().__init__(prod, dataset)
         self.df = dataset
         self.dict = dataset.to_dict()
@@ -73,15 +73,16 @@ class DictDataset(AbstractDataset):
             p0, n0 = growset.count_p_n_rule(rule)
             best_foil = -math.inf
             best_l = None
-            for i in range(0, len(list(growset.dict.keys())) - 1):
-                col_name = list(growset.dict.keys())[i]
-                foil = best_foil
-                if col_name not in [x.var_name for x in rule.literals] or col_name in self.numeric_cols:
-                    col_values = list(set(growset.dict[col_name].values()))
-                    l, foil = growset.find_best_literal(p0, n0, col_values, col_name)
-                if foil > best_foil:
-                    best_l = copy.deepcopy(l)
-                    best_foil = foil
+            for i in range(0, len(list(growset.dict.keys()))):
+                if self.class_name!=list(growset.dict.keys())[i]:
+                    col_name = list(growset.dict.keys())[i]
+                    foil = best_foil
+                    if col_name not in [x.var_name for x in rule.literals] or col_name in self.numeric_cols:
+                        col_values = list(set(growset.dict[col_name].values()))
+                        l, foil = growset.find_best_literal(p0, n0, col_values, col_name)
+                    if foil > best_foil:
+                        best_l = copy.deepcopy(l)
+                        best_foil = foil
             if best_foil > self.grow_param:
                 rule.add_literal(best_l)
                 growset.delete_not_covered(rule)

@@ -163,4 +163,5 @@ def create_results_for_all_files_in_path_time_rules(path, filename_r=''):
     else:
         results.to_csv(filename_r, sep=';', encoding='utf-8', index_label='id')
 
-create_results_for_all_files_in_path_time_rules('num_of_rules/', 'jakosciowe/num_of_rules_time.csv')
+
+create_results_for_all_files_in_path_errors_acc_recall_auc("C:/Users/damia/Desktop/pracainz/rezultaty/random_rows/", '')

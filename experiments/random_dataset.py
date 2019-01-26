@@ -1,8 +1,6 @@
 import random
 import string
 import pandas as pd
-import numpy as np
-from Classifier.test_all_results import test_all, test_rule_creator
 
 
 def create_random_dataframe(num_of_features, num_of_rows, condition, prob):
@@ -44,3 +42,5 @@ def condition1(columns, i):
         return False
 
 
+df = create_random_dataframe(5, 100000, condition1, 0.1)
+df.to_csv('results_files/random_5_100000.csv', index=False)

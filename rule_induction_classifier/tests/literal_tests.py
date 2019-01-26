@@ -1,6 +1,6 @@
 import unittest
 
-from Classifier.literal import Literal
+from rule_induction_classifier.literal import Literal
 
 
 class TestNotebook(unittest.TestCase):

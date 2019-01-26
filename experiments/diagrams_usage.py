@@ -1,16 +1,19 @@
 
-from Classifier.diagrams import produce_diagram_for_one_file_with_errors, cube_diagram
+from experiments.diagrams import produce_diagram_for_one_file_with_errors, cube_diagram
 
-# produce_diagram_for_one_file_with_errors('jakosciowe/random_dataset_rows_inc.csv', 'train_examples', 'time_mean', 'time_std',
-#                  'Liczba przykładów', 'Czas w sekundach', 24, 24, 2, tick_size=15, groupby=False)
-#
-# produce_diagram_for_one_file_with_errors('jakosciowe/features_inc.csv', 'number_of_features', 'time_mean', 'time_std',
-#                  'Liczba atrybutów', 'Czas w sekundach', 24, 24, 2, tick_size=15)
-#
-# produce_diagram_for_one_file_with_errors('all/mushroom_rule_creator_bitmap_inc.csv', 'All train examples', 'Time in seconds', 'Time in seconds',
-#                  'Liczba przykładów', 'Czas w sekundach', 24, 24, 2, tick_size=15, groupby=True)
-#
-#
+produce_diagram_for_one_file_with_errors('jakosciowe/dict_inc_row.csv', 'train_examples', 'time_mean', 'time_std',
+                 'Liczba przykładów', 'Czas w sekundach', 24, 24, 2, tick_size=15, groupby=False)
+
+produce_diagram_for_one_file_with_errors('jakosciowe/dict_inc_col.csv', 'number_of_features', 'time_mean', 'time_std',
+                 'Liczba atrybutów', 'Czas w sekundach', 24, 24, 2, tick_size=15, groupby=False)
+
+produce_diagram_for_one_file_with_errors('jakosciowe/features_inc.csv', 'number_of_features', 'time_mean', 'time_std',
+                 'Liczba atrybutów', 'Czas w sekundach', 24, 24, 2, tick_size=15)
+
+produce_diagram_for_one_file_with_errors('all/mushroom_rule_creator_bitmap_inc.csv', 'All train examples', 'Time in seconds', 'Time in seconds',
+                 'Liczba przykładów', 'Czas w sekundach', 24, 24, 2, tick_size=15, groupby=True)
+
+
 cube_diagram('uzyte_w_pracy/income_tree.csv',
              'uzyte_w_pracy/income_random_forest_100trees.csv',
              'uzyte_w_pracy/income_regression.csv',

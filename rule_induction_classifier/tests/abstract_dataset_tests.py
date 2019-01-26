@@ -1,8 +1,7 @@
 import math
-import pandas as pd
 import unittest
 
-from Classifier.abstract_datasets.abstract_dataset import count_foil_grow
+from rule_induction_classifier.abstract_datasets.abstract_dataset import count_foil_grow
 
 
 class TestNotebook(unittest.TestCase):

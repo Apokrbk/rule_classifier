@@ -1,0 +1,13 @@
+include tests/test_files/mushroom.csv
+include tests/test_files/testfile_1.csv
+include tests/test_files/testfile_2.csv
+include tests/test_files/testfile_3.csv
+include tests/test_files/testfile_4.csv
+include tests/test_files/testfile_5.csv
+include tests/test_files/testfile_6_all_n.csv
+include tests/test_files/testfile_7_not_all_n.csv
+include tests/test_files/testfile_8.csv
+include tests/test_files/testfile_9_cubes.csv
+include tests/test_files/testfile_10_all_p.csv
+include tests/test_files/testfile_11_no_rows.csv
+include requirements.txt

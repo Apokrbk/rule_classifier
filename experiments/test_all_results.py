@@ -6,10 +6,8 @@ from sklearn import preprocessing
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
-from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
-from Classifier.abstract_datasets.dict_dataset.dict_dataset import DictDataset
-from Classifier.rule_creator import RuleCreator
-
+from rule_induction_classifier.rule_induction_classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
+from rule_induction_classifier.rule_induction_classifier.rule_creator import RuleCreator
 
 def split_kfold(df, kfold):
     df = df.sample(frac=1)

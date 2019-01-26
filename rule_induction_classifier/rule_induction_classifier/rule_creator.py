@@ -1,7 +1,4 @@
-import pandas as pd
-
-from Classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
-
+from rule_induction_classifier.abstract_datasets.bitmap_dataset.bitmap_dataset import BitmapDataset
 
 class RuleCreator:
 

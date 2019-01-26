@@ -1,14 +1,10 @@
-import time
-
-from Classifier.literal import Literal
-from Classifier.rule import Rule
+from rule_induction_classifier.literal import Literal
+from rule_induction_classifier.rule import Rule
 import copy
 import math
 import random
-from Classifier.abstract_datasets.abstract_dataset import AbstractDataset, count_foil_grow
-import numpy as np
+from rule_induction_classifier.abstract_datasets.abstract_dataset import AbstractDataset, count_foil_grow
 from pyroaring import BitMap
-import pandas as pd
 
 
 class BitmapDataset(AbstractDataset):
